@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="icon-192.png">
+ <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Effector Designer Pro v13.20</title>
 <style>
@@ -103,6 +106,17 @@
     label { font-size: 12px; font-weight: 500; color: var(--text); }
 </style>
 </head>
+    <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        console.log('ServiceWorker registered:', reg.scope);
+      }).catch(err => {
+        console.log('ServiceWorker registration failed:', err);
+      });
+    });
+  }
+    </script>
 <body>
 
 <div id="view-area"><canvas id="pcbCanvas"></canvas></div>
