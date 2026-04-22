@@ -1,7 +1,7 @@
 {
   "name": "Effector Designer Pro",
   "short_name": "EffectorPro",
-  "start_url": "./index.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#2563eb",
