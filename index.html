@@ -3,11 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Effector Designer Pro v13.20</title>
+<title>Effector Designer Pro v13.40</title>
 
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#2563eb">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 
 <style>
     :root { 
@@ -21,7 +24,23 @@
         --btn-hover: #f1f5f9;
     }
     
-    body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: background 0.3s; }
+    body { 
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        margin: 0; 
+        background: var(--bg); 
+        color: var(--text); 
+        display: flex; 
+        flex-direction: column; 
+        height: 100vh; 
+        height: 100dvh; 
+        width: 100vw;
+        position: fixed; 
+        top: 0; 
+        left: 0;
+        overflow: hidden; 
+        transition: background 0.3s; 
+    }
+    
     body input, body select { background: #fff; color: var(--text); border: 1px solid #cbd5e1; outline: none; border-radius: 4px; padding: 6px; font-size: 13px; font-family: inherit; }
     body input:focus, body select:focus { border-color: var(--accent); }
     
@@ -100,11 +119,18 @@
     .color-btn.active { border-color: var(--text); transform: scale(1.05); }
 
     .modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; padding: 20px; box-sizing: border-box; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-    .modal-content { background: var(--panel); padding: 24px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+    .modal-content { background: var(--panel); padding: 24px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; width: 100%; max-width: 440px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
     .history-btn { background: var(--btn-hover); color: var(--text); width: 44px; font-size: 16px; border: 1px solid var(--border); }
     
     hr { border: none; border-top: 1px solid var(--border); width: 100%; margin: 8px 0; }
     label { font-size: 12px; font-weight: 500; color: var(--text); }
+
+    /* キーコンフィグ用スタイル */
+    .key-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .key-row:last-child { border-bottom: none; }
+    .key-btn { background: var(--btn-hover); border: 1px solid var(--border); color: var(--text); padding: 4px 12px; border-radius: 4px; font-family: monospace; min-width: 80px; text-align: center; cursor: pointer; }
+    .key-btn.listening { background: var(--accent); color: white; border-color: var(--accent); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -112,12 +138,27 @@
 <div id="view-area"><canvas id="pcbCanvas"></canvas></div>
 
 <div id="bomModal" class="modal">
-    <div class="modal-content" style="height: 80%; max-width: 600px;">
+    <div class="modal-content" style="height: 85%; max-width: 600px;">
         <h3 style="margin:0; font-size: 16px; color: var(--text);">BOM (Parts List)</h3>
-        <textarea id="partListText" style="flex:1; background:var(--bg); color:var(--text); border:1px solid var(--border); padding:12px; font-family: monospace; font-size: 13px; border-radius: 4px;" readonly></textarea>
+        <textarea id="partListText" style="flex:1; background:var(--bg); color:var(--text); border:1px solid var(--border); padding:12px; font-family: monospace; font-size: 13px; border-radius: 4px; resize:none;" readonly></textarea>
         <div class="row" style="margin:0;">
-            <button onclick="document.getElementById('partListText').select(); document.execCommand('copy'); alert('クリップボードにコピーしました');" class="btn-primary" style="flex:1;">コピー</button>
+            <button onclick="document.getElementById('partListText').select(); document.execCommand('copy'); setTimeout(() => alert('クリップボードにコピーしました'), 50);" class="btn-primary" style="flex:1;">コピー</button>
             <button onclick="closeBomModal()" class="btn-default" style="flex:1;">閉じる</button>
+        </div>
+    </div>
+</div>
+
+<div id="keyConfigModal" class="modal">
+    <div class="modal-content" style="max-width: 360px;">
+        <h3 style="margin:0; font-size: 16px; color: var(--text); text-align: center;">キーコンフィグ設定</h3>
+        <div style="font-size: 11px; color: var(--text); text-align: center; opacity: 0.8; margin-bottom: 8px;">変更したいボタンをクリックして、新しいキーを押してください。</div>
+        
+        <div id="keyConfigList" style="flex:1; overflow-y:auto; border: 1px solid var(--border); padding: 0 12px; border-radius: 6px;">
+            </div>
+
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <button onclick="resetKeyConfig()" class="btn-danger" style="flex:1;">初期値に戻す</button>
+            <button onclick="closeKeyConfigModal()" class="btn-default" style="flex:1;">完了</button>
         </div>
     </div>
 </div>
@@ -147,14 +188,15 @@
         
         <div class="grid-5" style="grid-template-columns: 1fr 1fr;">
             <button onclick="toggleTheme()" class="btn-default">テーマ切替</button>
-            <button onclick="openBomModal()" class="btn-default">BOM出力</button>
+            <button onclick="openKeyConfigModal()" class="btn-default">キーコンフィグ</button>
             <button onclick="importImage()" class="btn-default">参照画像 読込</button>
             <button onclick="saveImage3View()" class="btn-default">3面図 出力</button>
             <button onclick="importData()" class="btn-default">データ 読込</button>
-            <button onclick="saveFile('data')" class="btn-primary">データ 保存</button>
+            <button onclick="openBomModal()" class="btn-default">BOM 出力</button>
         </div>
         
-        <button onclick="resetProject()" class="btn-danger" style="margin-top: 8px;">プロジェクト初期化</button>
+        <button onclick="saveFile('data')" class="btn-primary" style="margin-top: 4px; padding: 12px;">プロジェクトデータ 保存 (.json)</button>
+        <button onclick="resetProject()" class="btn-danger" style="margin-top: 12px;">プロジェクト初期化</button>
         <button onclick="document.getElementById('dataMenuModal').style.display='none'" class="btn-default" style="margin-top: 4px;">閉じる</button>
     </div>
 </div>
@@ -244,13 +286,31 @@
     const GRID = 10;
     const COLORS = ["#000","#8B4513","#F00","#F80","#FF0","#080","#00F","#A0F","#888","#FFF"];
 
+    // --- キーコンフィグ設定 ---
+    const defaultKeyConfig = {
+        up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight',
+        action: 'Enter', rotate: 'r', delete: 'Delete',
+        undo: 'z', redo: 'y', // Ctrl + z/y は固定で、文字キーだけ指定
+        modeMove: '1', modeDraw: '2', modeSelect: '3', modeCheck: '4',
+        flip: 'f', xray: 'x'
+    };
+
+    const keyLabels = {
+        up: '上に移動', down: '下に移動', left: '左に移動', right: '右に移動',
+        action: '決定 / アクション', rotate: 'パーツ回転', delete: '選択削除 (BSも可)',
+        undo: '元に戻す (Ctrl+)', redo: 'やり直し (Ctrl+)',
+        modeMove: '部品配置モード', modeDraw: '配線モード', modeSelect: '範囲選択モード', modeCheck: '検査モード',
+        flip: '裏面切替', xray: '透視切替'
+    };
+
     let state = {
         mode: 'move', viewMode: 'pcb', xray: false, flipBoard: false, isDarkMode: false,
         zoom: 3, offsetX: 50, offsetY: 50, imgZoom: 1.0, imgPos: {x: 0, y: 0},
         boardX: 15, boardY: 10, boardPos: {x: 0, y: 0}, cursor: {x: 0, y: 0},
         parts: [], lines: [], selectedPart: null, currentWire: null, selectedWire: null, wireColor: '#dc2626', bgImage: null,
         multiSelection: [], multiSelectedLines: [], selectStart: null,
-        errors: [], currentErrorIndex: -1
+        errors: [], currentErrorIndex: -1,
+        keyConfig: { ...defaultKeyConfig }, listeningForKey: null
     };
 
     let historyManager = { past: [], future: [] };
@@ -291,6 +351,12 @@
         state.isDarkMode = localStorage.getItem('eff_pro_dark') === 'true';
         if(state.isDarkMode) document.body.classList.add('dark-mode');
 
+        // キーコンフィグの読み込み
+        const savedKeys = localStorage.getItem('eff_pro_keys');
+        if (savedKeys) {
+            try { state.keyConfig = { ...defaultKeyConfig, ...JSON.parse(savedKeys) }; } catch(e) {}
+        }
+
         const saved = localStorage.getItem('effector_pro_backup');
         if (saved) {
             loadSnapshot(saved);
@@ -302,6 +368,9 @@
         updateActionUI(); 
         updateTopButtons();
         requestRender(); 
+        
+        // ゲームパッドの監視ループ開始
+        requestAnimationFrame(gamepadLoop);
     }
 
     window.resetProject = () => { if(confirm("プロジェクトを初期化しますか？保存されていないデータは完全に消去されます。")) { localStorage.removeItem('effector_pro_backup'); localStorage.removeItem('effector_pro_title'); location.reload(); } };
@@ -347,6 +416,175 @@
         return coords;
     }
 
+    // --- 入力（キーボード）処理 ---
+    function checkKeyMatch(eKey, confKey) {
+        if(!eKey || !confKey) return false;
+        return eKey.toLowerCase() === confKey.toLowerCase();
+    }
+
+    window.addEventListener('keydown', e => {
+        // テキスト入力中はショートカットを無効化
+        const activeTag = document.activeElement.tagName;
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
+
+        // キーコンフィグの設定待ち状態
+        if (state.listeningForKey) {
+            e.preventDefault();
+            let key = e.key;
+            if (key === ' ') key = 'Space';
+            state.keyConfig[state.listeningForKey] = key;
+            state.listeningForKey = null;
+            localStorage.setItem('eff_pro_keys', JSON.stringify(state.keyConfig));
+            renderKeyConfigList();
+            return;
+        }
+
+        let key = e.key;
+        if (key === ' ') key = 'Space';
+        const isCtrl = e.ctrlKey || e.metaKey; // Mac対応
+
+        // Ctrlショートカット (Undo/Redo)
+        if (isCtrl) {
+            if (checkKeyMatch(key, state.keyConfig.undo)) { e.preventDefault(); undo(); return; }
+            if (checkKeyMatch(key, state.keyConfig.redo)) { e.preventDefault(); redo(); return; }
+        }
+
+        // デフォルトのスクロール動作などを防ぐ
+        if ([state.keyConfig.up, state.keyConfig.down, state.keyConfig.left, state.keyConfig.right, state.keyConfig.action].some(k => checkKeyMatch(key, k)) || key === 'Backspace') {
+            e.preventDefault();
+        }
+
+        // 削除処理の共通化
+        const handleDelete = () => {
+            if (state.mode === 'select') deleteMultiSelected(); 
+            else if (state.mode === 'draw') deleteSelectedWire();
+            else deleteSelected();
+        };
+
+        if (checkKeyMatch(key, state.keyConfig.up)) navMove(0, -10);
+        else if (checkKeyMatch(key, state.keyConfig.down)) navMove(0, 10);
+        else if (checkKeyMatch(key, state.keyConfig.left)) navMove(-10, 0);
+        else if (checkKeyMatch(key, state.keyConfig.right)) navMove(10, 0);
+        else if (checkKeyMatch(key, state.keyConfig.action)) handleAction();
+        else if (checkKeyMatch(key, state.keyConfig.rotate)) rotateSelected();
+        else if (checkKeyMatch(key, state.keyConfig.delete) || key === 'Backspace') handleDelete(); // Backspaceは常に許容
+        else if (checkKeyMatch(key, state.keyConfig.modeMove)) setUIMode('move');
+        else if (checkKeyMatch(key, state.keyConfig.modeDraw)) setUIMode('draw');
+        else if (checkKeyMatch(key, state.keyConfig.modeSelect)) setUIMode('select');
+        else if (checkKeyMatch(key, state.keyConfig.modeCheck)) setUIMode('check');
+        else if (checkKeyMatch(key, state.keyConfig.flip)) toggleFlip();
+        else if (checkKeyMatch(key, state.keyConfig.xray)) toggleXray();
+    });
+
+    // --- 入力（ゲームパッド）処理 ---
+    let gpPrevState = { up: false, down: false, left: false, right: false, action: false, cancel: false };
+    let gpCooldown = 0; // スティック押しっぱなしの連続移動ウェイト
+    let gpInitialDelay = true;
+
+    function gamepadLoop() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        const gp = gamepads[0]; // 最初のコントローラーのみ
+        
+        if (gp) {
+            if (gpCooldown > 0) gpCooldown--;
+
+            const threshold = 0.5; // アナログスティックの閾値
+            // 十字キー(D-Pad) または 左アナログスティック
+            let up = gp.buttons[12]?.pressed || gp.axes[1] < -threshold;
+            let down = gp.buttons[13]?.pressed || gp.axes[1] > threshold;
+            let left = gp.buttons[14]?.pressed || gp.axes[0] < -threshold;
+            let right = gp.buttons[15]?.pressed || gp.axes[0] > threshold;
+            
+            // Aボタン(0)で決定、Bボタン(1)でキャンセル
+            let action = gp.buttons[0]?.pressed;
+            let cancel = gp.buttons[1]?.pressed;
+
+            // 移動の処理 (連続入力対応)
+            let moveX = 0, moveY = 0;
+            if (up) moveY -= 10;
+            if (down) moveY += 10;
+            if (left) moveX -= 10;
+            if (right) moveX += 10;
+
+            if ((moveX !== 0 || moveY !== 0)) {
+                if (gpCooldown === 0) {
+                    navMove(moveX, moveY);
+                    gpCooldown = gpInitialDelay ? 15 : 4; // 最初は少し待ってから連続移動
+                    gpInitialDelay = false;
+                }
+            } else {
+                gpInitialDelay = true;
+                gpCooldown = 0;
+            }
+
+            // 単発アクションの処理 (押しっぱなし無効)
+            if (action && !gpPrevState.action) { handleAction(); }
+            
+            if (cancel && !gpPrevState.cancel) {
+                if (state.mode === 'select') clearSelection();
+                else if (state.mode === 'draw') { state.currentWire = null; state.selectedWire = null; requestRender(); }
+                else { state.selectedPart = null; updateInputUI(); requestRender(); }
+            }
+
+            gpPrevState = { up, down, left, right, action, cancel };
+        }
+        requestAnimationFrame(gamepadLoop);
+    }
+
+    // --- キーコンフィグUIの処理 ---
+    window.openKeyConfigModal = () => {
+        document.getElementById('dataMenuModal').style.display = 'none';
+        state.listeningForKey = null;
+        renderKeyConfigList();
+        document.getElementById('keyConfigModal').style.display = 'flex';
+    };
+
+    window.closeKeyConfigModal = () => {
+        state.listeningForKey = null;
+        document.getElementById('keyConfigModal').style.display = 'none';
+        document.getElementById('dataMenuModal').style.display = 'flex';
+    };
+
+    window.listenForKey = (configKey) => {
+        state.listeningForKey = configKey;
+        renderKeyConfigList();
+    };
+
+    window.resetKeyConfig = () => {
+        if(confirm("キーコンフィグを初期値に戻しますか？")) {
+            state.keyConfig = { ...defaultKeyConfig };
+            localStorage.setItem('eff_pro_keys', JSON.stringify(state.keyConfig));
+            state.listeningForKey = null;
+            renderKeyConfigList();
+        }
+    };
+
+    function renderKeyConfigList() {
+        const container = document.getElementById('keyConfigList');
+        container.innerHTML = '';
+        
+        for (const [key, label] of Object.entries(keyLabels)) {
+            const row = document.createElement('div');
+            row.className = 'key-row';
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.style.fontSize = '12px';
+            nameDiv.style.fontWeight = '500';
+            nameDiv.innerText = label;
+            
+            const btn = document.createElement('div');
+            btn.className = `key-btn ${state.listeningForKey === key ? 'listening' : ''}`;
+            btn.innerText = state.listeningForKey === key ? '入力待ち...' : state.keyConfig[key];
+            btn.onclick = () => listenForKey(key);
+            
+            row.appendChild(nameDiv);
+            row.appendChild(btn);
+            container.appendChild(row);
+        }
+    }
+
+
+    // --- タッチ・マウス操作処理 ---
     let initialPinchDist = null, initialZoom = 1, lastPanX = 0, lastPanY = 0, isPanning = false;
 
     canvas.addEventListener('touchstart', e => {
@@ -498,7 +736,6 @@
                 if(hitWire && !state.selectedWire) { state.selectedWire = hitWire; } else { state.selectedWire = null; state.currentWire = { color: state.wireColor, points: [{...state.cursor}] }; }
             } else { 
                 if(state.currentWire.points.length > 1) { 
-                    // --- スマートマージ（配線結合）処理 ---
                     let merged = false;
                     const cw = state.currentWire;
                     const pFirst = cw.points[0];
@@ -562,6 +799,7 @@
             p.type = 'Pad'; const padType = type.split('_')[1]; p.label = padType;
             const padColors = { '9V':'#e84118', 'GND':'#4cd137', 'IN':'#00a8ff', 'OUT':'#9c88ff', 'POT':'#ca8a04', 'SW-IN':'#00a8ff', 'SW-OUT':'#9c88ff' };
             p.color = padColors[padType] || '#94a3b8';
+            p.bbox = {x:-5, y:-5, w:10, h:10};
         }
 
         state.parts.push(p); state.selectedPart = p; commitState(); 
@@ -575,8 +813,9 @@
         
         if(newType.startsWith('Pad_')) {
             p.type = 'Pad'; const padType = newType.split('_')[1]; p.label = padType;
-            const padColors = { '9V':'#e84118', 'GND':'#4cd137', 'IN':'#00a8ff', 'OUT':'#9c88ff', 'POT':'#ca8a04', 'SW-IN':'#00a8ff', 'SW-OUT':'#9c88ff' };
-            p.color = padColors[padType] || '#94a3b8';
+            const padColors = { '9V':'#e84118', 'GND':'#4cd137', 'IN':'#00a8ff', 'OUT':'#9c88ff', 'POT':'#ca8a04', 'SW-IN':'#00a8ff', 'SW-OUT':'#9c88ff', 'Custom': '#cbd5e1' };
+            p.color = padColors[padType] || '#cbd5e1'; 
+            p.bbox = {x:-5, y:-5, w:10, h:10};
         } else {
             p.type = newType;
             if(newType==='R'){ p.pins=[{x:0,y:0},{x:30,y:0}]; p.bbox={x:2, y:-4, w:26, h:8}; } 
@@ -725,11 +964,19 @@
                 <option value="9V" ${p.label==='9V'?'selected':''}>9V</option><option value="GND" ${p.label==='GND'?'selected':''}>GND</option>
                 <option value="IN" ${p.label==='IN'?'selected':''}>IN</option><option value="OUT" ${p.label==='OUT'?'selected':''}>OUT</option>
                 <option value="POT" ${p.label==='POT'?'selected':''}>POT線</option><option value="SW-IN" ${p.label==='SW-IN'?'selected':''}>SW-IN</option><option value="SW-OUT" ${p.label==='SW-OUT'?'selected':''}>SW-OUT</option>
+                <option value="Custom" ${!['9V','GND','IN','OUT','POT','SW-IN','SW-OUT'].includes(p.label)?'selected':''}>カスタム</option>
             </select>`;
         }
 
         let inputHtml = '';
-        if (p.type.startsWith('R') || p.type.startsWith('C_')) {
+        if (p.type === 'Pad') {
+            inputHtml = `
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <input type="color" id="padColor" value="${p.color}" style="width:44px; height:36px; padding:2px; border-radius:4px; border:1px solid var(--border);" onchange="applyDynamicInput()">
+                    <input type="text" id="partTxt" value="${p.label}" style="flex:1; width:0; padding:8px; box-sizing:border-box;" placeholder="ラベル..." oninput="applyDynamicInput()">
+                </div>
+            `;
+        } else if (p.type.startsWith('R') || p.type.startsWith('C_')) {
             let val = parseFloat(p.label) || (p.type.startsWith('R') ? 10 : 0.1);
             let unit = p.label.replace(/[\d\.]/g, '').trim() || (p.type.startsWith('R') ? 'k' : 'u');
             if(p.type.startsWith('R') && !['R','k','M'].includes(unit)) unit = 'k';
@@ -754,7 +1001,7 @@
                     <span style="color:var(--text); font-size:12px;">マス</span>
                 </div>
             `;
-        } else if (p.type !== 'Pad') {
+        } else {
             inputHtml = `<input type="text" id="partTxt" value="${p.label}" style="width:100%; padding:8px; box-sizing:border-box;" placeholder="名称・値..." oninput="applyDynamicInput()">`;
         }
         container.innerHTML = typeSelector + inputHtml;
@@ -762,9 +1009,11 @@
 
     window.applyDynamicInput = () => {
         if(!state.selectedPart) return;
-        const num = document.getElementById('partNum'), unit = document.getElementById('partUnit'), txt = document.getElementById('partTxt'), p = state.selectedPart;
+        const num = document.getElementById('partNum'), unit = document.getElementById('partUnit'), txt = document.getElementById('partTxt'), padColor = document.getElementById('padColor'), p = state.selectedPart;
 
-        if (p.type === 'Jump' && num) {
+        if (p.type === 'Pad' && padColor && txt) {
+            p.color = padColor.value; p.label = txt.value;
+        } else if (p.type === 'Jump' && num) {
             let val = parseInt(num.value); if(isNaN(val) || val < 1) val = 1;
             p.label = val.toString(); p.pins[1] = {x: val * 10, y: 0}; p.bbox.w = val * 10;
         } else if (num && unit) p.label = num.value + unit.value; 
@@ -773,7 +1022,6 @@
         commitState(); if(state.mode==='check') runCheck(); requestRender();
     }
 
-    // --- エラー検査システム ---
     window.runCheck = () => {
         state.errors = [];
         let allWirePoints = []; let allPinCoords = [];
@@ -991,29 +1239,33 @@
                 if(p.type !== 'Jump') {
                     let tColor = '#000';
                     if (['C_Elect', 'C_Tantalum', 'D', 'D_Stand', 'D_Si', 'D_Si_Stand', 'IC8', 'IC14', 'IC_SIP8', 'TR', 'TR_MOSFET', 'Pot', 'Trim', 'SW'].includes(p.type)) { tColor = '#fff'; } 
-                    else if (p.type === 'Pad') { if (p.color === '#e84118' || p.color === '#9c88ff' || p.color === '#0f172a' || p.color === '#2563eb' || p.color === '#ea580c' || p.color === '#db2777') tColor = '#fff'; }
+                    else if (p.type === 'Pad') { 
+                        let hex = p.color.replace('#', '');
+                        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+                        let r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16);
+                        let yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                        tColor = (yiq >= 128) ? '#000' : '#fff';
+                    }
                     
                     ctx.fillStyle = tColor; ctx.font = 'bold 4px sans-serif'; ctx.textAlign='center'; 
                     ctx.save();
-                    let labelX = (p.pins.length>1 ? p.pins[1].x/2 : 0), labelY = 2;
-                    if(p.type.startsWith('IC8') || p.type.startsWith('IC14')) { labelX = 15; labelY = 15; } 
-                    if(p.type==='IC_SIP8') { labelX = 5; labelY = 35; } 
-                    if(p.type==='Pot') { labelX = 10; labelY = -15; }
-                    if(p.type==='Trim') { labelX = 10; labelY = -8; } if(p.type==='SW') { labelX = 5; labelY = -5; }
-                    if(p.type==='TR' || p.type==='TR_MOSFET') { labelX = 10; labelY = 4; } 
-                    if(p.type==='C_Elect' || p.type.endsWith('_Stand')) { labelX = 5; labelY = 2; } if(p.type==='C_Ceramic' || p.type==='C_Tantalum') { labelX = 5; labelY = 2; }
                     
-                    ctx.translate(labelX, labelY); ctx.rotate(-p.rot * Math.PI/2);
-                    if (p.rot % 2 !== 0) ctx.rotate(-Math.PI/2);
-                    if (p.type==='IC_SIP8' && p.rot % 2 === 0) { ctx.rotate(-Math.PI/2); }
-                    ctx.fillText(p.label, 0, 0); 
+                    let cx = p.bbox.x + p.bbox.w / 2;
+                    let cy = p.bbox.y + p.bbox.h / 2;
+                    if(p.type === 'Pot') { cy = -15; }
+                    if(p.type === 'Trim') { cy = -8; }
+                    if(p.type === 'SW') { cy = -5; }
+                    if(p.type === 'TR' || p.type === 'TR_MOSFET') { cy = 4; }
+                    
+                    ctx.translate(cx, cy);
+                    ctx.rotate(-p.rot * Math.PI/2);
+                    ctx.fillText(p.label, 0, 1.5); 
                     ctx.restore();
                 }
                 ctx.restore();
             });
         }
 
-        // ピンは常に不透明で描画
         ctx.globalAlpha = 1.0;
         state.parts.forEach(p => {
             p.pins.forEach(pn => { 
@@ -1063,8 +1315,30 @@
     };
     
     window.importImage = () => {
-        document.getElementById('dataMenuModal').style.display='none'; const input = document.createElement('input'); input.type='file'; input.accept='image/*';
-        input.onchange = e => { const reader = new FileReader(); reader.onload = f => { const img = new Image(); img.onload = () => { state.bgImage = img; state.viewMode = 'image'; state.imgZoom = 1.0; state.imgPos = {x:0, y:0}; updateTopButtons(); requestRender(); alert("参照画像を読み込みました。"); }; img.src = f.target.result; }; reader.readAsDataURL(e.target.files[0]); }; input.click();
+        document.getElementById('dataMenuModal').style.display='none'; 
+        const input = document.createElement('input'); 
+        input.type='file'; 
+        input.accept='image/*';
+        input.onchange = e => { 
+            window.scrollTo(0, 0); 
+            const reader = new FileReader(); 
+            reader.onload = f => { 
+                const img = new Image(); 
+                img.onload = () => { 
+                    state.bgImage = img; state.viewMode = 'image'; 
+                    const scale = Math.min((canvas.width * 0.8) / img.width, (canvas.height * 0.8) / img.height, 1.0);
+                    state.imgZoom = scale; 
+                    state.imgPos = {x:0, y:0}; 
+                    updateTopButtons(); 
+                    resize(); 
+                    requestRender(); 
+                    setTimeout(() => alert("参照画像を読み込みました。"), 50); 
+                }; 
+                img.src = f.target.result; 
+            }; 
+            reader.readAsDataURL(e.target.files[0]); 
+        }; 
+        input.click();
     };
 
     window.saveImage3View = async () => {
@@ -1168,14 +1442,81 @@
     }
     
     window.importData = () => {
-        document.getElementById('dataMenuModal').style.display='none'; const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
-        input.onchange = e => { const reader = new FileReader(); reader.onload = f => { try { const data = JSON.parse(f.target.result); if(data.projectName) document.getElementById('projectNameInput').value = data.projectName; state.parts = data.parts || []; state.lines = data.lines || []; state.boardX = data.boardX || 15; state.boardY = data.boardY || 10; state.boardPos = data.boardPos || {x:0, y:0}; state.selectedPart = null; state.currentWire = null; state.selectedWire = null; state.multiSelection = []; state.multiSelectedLines = []; state.selectStart = null; document.getElementById('boardSizeSelect').value = 'custom'; document.getElementById('customSizeDiv').style.display = 'flex'; document.getElementById('customX').value = state.boardX; document.getElementById('customY').value = state.boardY; commitState(); updateActionUI(); requestRender(); alert("データを読み込みました"); } catch(err) { alert("読込失敗"); } }; reader.readAsText(e.target.files[0]); }; input.click();
+        document.getElementById('dataMenuModal').style.display='none'; 
+        const input = document.createElement('input'); 
+        input.type = 'file'; 
+        input.accept = '.json';
+        input.onchange = e => { 
+            window.scrollTo(0, 0); 
+            const reader = new FileReader(); 
+            reader.onload = f => { 
+                try { 
+                    const data = JSON.parse(f.target.result); 
+                    if(data.projectName) document.getElementById('projectNameInput').value = data.projectName; 
+                    state.parts = data.parts || []; 
+                    state.lines = data.lines || []; 
+                    state.boardX = data.boardX || 15; 
+                    state.boardY = data.boardY || 10; 
+                    state.boardPos = data.boardPos || {x:0, y:0}; 
+                    state.selectedPart = null; 
+                    state.currentWire = null; 
+                    state.selectedWire = null; 
+                    state.multiSelection = []; 
+                    state.multiSelectedLines = []; 
+                    state.selectStart = null; 
+                    document.getElementById('boardSizeSelect').value = 'custom'; 
+                    document.getElementById('customSizeDiv').style.display = 'flex'; 
+                    document.getElementById('customX').value = state.boardX; 
+                    document.getElementById('customY').value = state.boardY; 
+                    commitState(); 
+                    updateActionUI(); 
+                    requestRender(); 
+                    setTimeout(() => alert("データを読み込みました"), 50); 
+                } catch(err) { 
+                    setTimeout(() => alert("読込失敗"), 50); 
+                } 
+            }; 
+            reader.readAsText(e.target.files[0]); 
+        }; 
+        input.click();
     };
     
     window.openBomModal = () => {
         document.getElementById('dataMenuModal').style.display = 'none'; 
-        let list = {}; state.parts.forEach(p => { if(p.type!=='Pad' && p.type!=='Jump') { let k=`${p.type}: ${p.label}`; list[k]=(list[k]||0)+1; } });
-        let text = "--- BOM (Parts List) ---\n"; for(let k in list) text += `${k} x ${list[k]}\n`; 
+        
+        let groups = {}; 
+        state.parts.forEach(p => { 
+            if(p.type !== 'Pad' && p.type !== 'Jump') { 
+                let category = 'Other';
+                if(p.type.startsWith('R')) category = 'Resistor (抵抗)';
+                else if(p.type.startsWith('C_')) category = 'Capacitor (コンデンサ)';
+                else if(p.type.startsWith('D')) category = 'Diode (ダイオード)';
+                else if(p.type.startsWith('IC')) category = 'IC (集積回路)';
+                else if(p.type.startsWith('TR')) category = 'Transistor / FET';
+                else if(p.type === 'Pot' || p.type === 'Trim') category = 'Potentiometer (可変抵抗)';
+                else if(p.type === 'SW') category = 'Switch (スイッチ)';
+
+                if(!groups[category]) groups[category] = {};
+                let k = p.label || '無名'; 
+                groups[category][k] = (groups[category][k] || 0) + 1; 
+            } 
+        });
+
+        let order = ['Resistor (抵抗)', 'Capacitor (コンデンサ)', 'Diode (ダイオード)', 'Transistor / FET', 'IC (集積回路)', 'Potentiometer (可変抵抗)', 'Switch (スイッチ)', 'Other'];
+        let text = "--- BOM (Parts List) ---\n\n"; 
+        
+        order.forEach(cat => {
+            if(groups[cat]) {
+                let total = 0;
+                let itemsText = "";
+                for(let k in groups[cat]) {
+                    itemsText += `  ${k} : ${groups[cat][k]} 個\n`;
+                    total += groups[cat][k];
+                }
+                text += `【${cat}】 計 ${total} 個\n${itemsText}\n`;
+            }
+        });
+        
         document.getElementById('partListText').value = text; 
         document.getElementById('bomModal').style.display='flex';
     };
@@ -1185,12 +1526,9 @@
         document.getElementById('dataMenuModal').style.display = 'flex';
     };
 
-    document.getElementById('bomModal').addEventListener('click', function(e) {
-        if(e.target === this) closeBomModal();
-    });
-    document.getElementById('dataMenuModal').addEventListener('click', function(e) {
-        if(e.target === this) this.style.display = 'none';
-    });
+    document.getElementById('bomModal').addEventListener('click', function(e) { if(e.target === this) closeBomModal(); });
+    document.getElementById('dataMenuModal').addEventListener('click', function(e) { if(e.target === this) this.style.display = 'none'; });
+    document.getElementById('keyConfigModal').addEventListener('click', function(e) { if(e.target === this) closeKeyConfigModal(); });
     
     init();
 </script>
@@ -1207,4 +1545,4 @@
   }
 </script>
 </body>
-    </html>
+</html>
