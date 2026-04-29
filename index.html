@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Effector Designer Pro v13.40</title>
+<title>Effector Designer Pro v13.70</title>
 
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#2563eb">
@@ -71,6 +71,9 @@
     .row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; width: 100%; flex: 0 0 auto; }
     .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; margin-bottom: 8px; }
     .grid-5 button { height: 38px; font-size: 12px; padding: 4px; }
+    
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; margin-bottom: 8px; }
+    .grid-4 button { height: 38px; font-size: 12px; padding: 4px; }
 
     button { 
         padding: 8px 12px; 
@@ -125,7 +128,6 @@
     hr { border: none; border-top: 1px solid var(--border); width: 100%; margin: 8px 0; }
     label { font-size: 12px; font-weight: 500; color: var(--text); }
 
-    /* キーコンフィグ用スタイル */
     .key-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
     .key-row:last-child { border-bottom: none; }
     .key-btn { background: var(--btn-hover); border: 1px solid var(--border); color: var(--text); padding: 4px 12px; border-radius: 4px; font-family: monospace; min-width: 80px; text-align: center; cursor: pointer; }
@@ -152,10 +154,7 @@
     <div class="modal-content" style="max-width: 360px;">
         <h3 style="margin:0; font-size: 16px; color: var(--text); text-align: center;">キーコンフィグ設定</h3>
         <div style="font-size: 11px; color: var(--text); text-align: center; opacity: 0.8; margin-bottom: 8px;">変更したいボタンをクリックして、新しいキーを押してください。</div>
-        
-        <div id="keyConfigList" style="flex:1; overflow-y:auto; border: 1px solid var(--border); padding: 0 12px; border-radius: 6px;">
-            </div>
-
+        <div id="keyConfigList" style="flex:1; overflow-y:auto; border: 1px solid var(--border); padding: 0 12px; border-radius: 6px;"></div>
         <div style="display:flex; gap:8px; margin-top:12px;">
             <button onclick="resetKeyConfig()" class="btn-danger" style="flex:1;">初期値に戻す</button>
             <button onclick="closeKeyConfigModal()" class="btn-default" style="flex:1;">完了</button>
@@ -183,6 +182,15 @@
                 <input type="number" id="customY" value="10" style="width:48px;" onchange="changeBoardSize()">
             </div>
         </div>
+
+        <label style="margin-top: 4px;">基板ピッチ (全体表示サイズ)</label>
+        <select id="gridPitchSelect" onchange="changeGridPitch()" style="width:100%;">
+            <option value="0.5">極小 (5px基準)</option>
+            <option value="0.75">小 (7.5px基準)</option>
+            <option value="1.0" selected>標準 (10px基準)</option>
+            <option value="1.5">中 (15px基準)</option>
+            <option value="2.0">大 (20px基準)</option>
+        </select>
         
         <hr>
         
@@ -221,19 +229,17 @@
 
     <div class="mode-content-wrapper">
         <div id="move-tools" class="mode-content active">
-            <div class="grid-5" style="margin-bottom:8px;">
+            <div class="grid-4" style="margin-bottom:8px;">
                 <button onclick="addPart('R')" style="background:#0f766e; color:#fff;">抵抗器</button>
                 <button onclick="addPart('C_Box')" style="background:#ca8a04; color:#fff;">コンデンサ</button>
                 <button onclick="addPart('D')" style="background:#be123c; color:#fff;">Diode</button>
-                <button onclick="addPart('IC8')" style="background:#334155; color:#fff;">IC</button>
-                <button onclick="addPart('TR')" style="background:#475569; color:#fff;">TR</button>
+                <button onclick="addPart('IC')" style="background:#334155; color:#fff;">IC / DIP</button>
             </div>
-            <div class="grid-5" style="margin-bottom:0;">
-                <button onclick="addPart('Pot')" style="background:#64748b; color:#fff;">Pot</button>
-                <button onclick="addPart('Trim')" style="background:#0284c7; color:#fff;">Trim</button>
+            <div class="grid-4" style="margin-bottom:0;">
+                <button onclick="addPart('TR')" style="background:#475569; color:#fff;">TR</button>
                 <button onclick="addPart('SW')" style="background:#b91c1c; color:#fff;">SW</button>
-                <button onclick="addPart('Jump')" style="background:#94a3b8; color:#000;">Jump</button>
-                <button onclick="addPart('Pad_9V')" style="background:#ea580c; color:#fff;">Pad</button>
+                <button onclick="addPart('Pad_POT')" style="background:#ea580c; color:#fff;">Pad</button>
+                <button onclick="addPart('Others')" style="background:#4b5563; color:#fff;">Others</button>
             </div>
         </div>
 
@@ -261,8 +267,7 @@
         </div>
 
         <div id="check-tools" class="mode-content">
-            <div id="check-results" style="padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; line-height: 1.5; min-height: 50px;">
-                </div>
+            <div id="check-results" style="padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; line-height: 1.5; min-height: 50px;"></div>
         </div>
     </div>
 
@@ -275,8 +280,7 @@
             <button style="grid-column:2; grid-row:3;" onclick="navMove(0,10)">▼</button>
         </div>
         
-        <div class="part-actions" id="part-actions-container">
-            </div>
+        <div class="part-actions" id="part-actions-container"></div>
     </div>
 </div>
 
@@ -286,11 +290,10 @@
     const GRID = 10;
     const COLORS = ["#000","#8B4513","#F00","#F80","#FF0","#080","#00F","#A0F","#888","#FFF"];
 
-    // --- キーコンフィグ設定 ---
     const defaultKeyConfig = {
         up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight',
         action: 'Enter', rotate: 'r', delete: 'Delete',
-        undo: 'z', redo: 'y', // Ctrl + z/y は固定で、文字キーだけ指定
+        undo: 'z', redo: 'y', 
         modeMove: '1', modeDraw: '2', modeSelect: '3', modeCheck: '4',
         flip: 'f', xray: 'x'
     };
@@ -305,7 +308,7 @@
 
     let state = {
         mode: 'move', viewMode: 'pcb', xray: false, flipBoard: false, isDarkMode: false,
-        zoom: 3, offsetX: 50, offsetY: 50, imgZoom: 1.0, imgPos: {x: 0, y: 0},
+        zoom: 3, offsetX: 50, offsetY: 50, imgZoom: 1.0, imgPos: {x: 0, y: 0}, baseScale: 1.0,
         boardX: 15, boardY: 10, boardPos: {x: 0, y: 0}, cursor: {x: 0, y: 0},
         parts: [], lines: [], selectedPart: null, currentWire: null, selectedWire: null, wireColor: '#dc2626', bgImage: null,
         multiSelection: [], multiSelectedLines: [], selectStart: null,
@@ -316,7 +319,7 @@
     let historyManager = { past: [], future: [] };
     let lastSelectedPart = null; 
 
-    function getSnapshot() { return JSON.stringify({ parts: state.parts, lines: state.lines, boardX: state.boardX, boardY: state.boardY, boardPos: state.boardPos }); }
+    function getSnapshot() { return JSON.stringify({ parts: state.parts, lines: state.lines, boardX: state.boardX, boardY: state.boardY, boardPos: state.boardPos, baseScale: state.baseScale }); }
 
     function commitState() {
         const snap = getSnapshot();
@@ -332,14 +335,116 @@
     window.undo = () => { if (historyManager.past.length > 1) { historyManager.future.push(historyManager.past.pop()); loadSnapshot(historyManager.past[historyManager.past.length - 1]); requestRender(); localStorage.setItem('effector_pro_backup', getSnapshot()); } };
     window.redo = () => { if (historyManager.future.length > 0) { const snap = historyManager.future.pop(); historyManager.past.push(snap); loadSnapshot(snap); requestRender(); localStorage.setItem('effector_pro_backup', getSnapshot()); } };
 
+    window.recalcPartGeometry = (p) => {
+        if(p.type === 'R') { 
+            p.pins=[{x:0,y:0},{x:p.span*10,y:0}]; 
+            p.bbox={x:2, y:-4, w:p.span*10-4, h:8}; 
+        } else if(p.type === 'R_Stand') { 
+            p.pins=[{x:0,y:0},{x:p.span*10,y:0}]; 
+            p.bbox={x:-5, y:-5, w:p.span*10+10, h:10}; 
+        } else if(p.type === 'C_Box') { 
+            p.pins=[{x:0,y:0},{x:p.span*10,y:0}]; 
+            p.bbox={x:1, y:-5, w:p.span*10-2, h:10}; 
+        } else if(p.type === 'C_Elect' || p.type === 'C_Ceramic' || p.type === 'C_Tantalum') { 
+            p.pins=[{x:0,y:0},{x:p.span*10,y:0}]; 
+            p.bbox={x:-3, y:-5, w:p.span*10+6, h:10}; 
+        } else if(p.type === 'D' || p.type === 'D_Si') { 
+            p.pins=[{x:0,y:0},{x:p.span*10,y:0}]; 
+            p.bbox={x:2, y:-4, w:p.span*10-4, h:8}; 
+        } else if(p.type === 'D_Stand' || p.type === 'D_Si_Stand') { 
+            p.pins=[{x:0,y:0},{x:p.span*10,y:0}]; 
+            p.bbox={x:-5, y:-5, w:p.span*10+10, h:10}; 
+        } else if(p.type === 'IC') { 
+            p.pins=[]; 
+            for(let i=0; i<p.span; i++){ p.pins.push({x:0,y:i*10}); p.pins.push({x:30,y:i*10}); } 
+            p.bbox={x:-4, y:-4, w:38, h:(p.span-1)*10+8}; 
+        } else if(p.type === 'IC_SIP') { 
+            p.pins=[]; 
+            for(let i=0; i<p.span; i++){ p.pins.push({x:0,y:i*10}); } 
+            p.bbox={x:-4, y:-4, w:18, h:(p.span-1)*10+8}; 
+        } else if(p.type === 'DIP_SW') { 
+            p.pins=[]; 
+            for(let i=0; i<p.span; i++){ p.pins.push({x:0,y:i*10}); p.pins.push({x:30,y:i*10}); } 
+            p.bbox={x:-4, y:-4, w:38, h:(p.span-1)*10+8}; 
+        } else if(p.type === 'TR' || p.type === 'TR_MOSFET') { 
+            p.pins=[];
+            for(let i=0; i<=p.span; i++) p.pins.push({x:i*10, y:0});
+            p.bbox={x:-2, y:-8, w:p.span*10+4, h:14}; 
+        } else if(p.type === 'Pot') { 
+            p.pins=[];
+            for(let i=0; i<=p.span; i++) p.pins.push({x:i*10, y:0});
+            p.bbox={x:0, y:-15, w:p.span*10, h:20}; 
+        } else if(p.type === 'Trim') { 
+            let apexX = Math.round(p.span / 2) * 10;
+            p.pins=[{x:0,y:0}, {x:p.span*10,y:0}, {x:apexX, y:10}];
+            p.bbox={x:-3, y:-5, w:p.span*10+6, h:18}; 
+        } else if(p.type === 'SW') { 
+            p.pins=[{x:0,y:0},{x:0,y:10},{x:0,y:20},{x:10,y:0},{x:10,y:10},{x:10,y:20}]; 
+            p.bbox={x:-4, y:-4, w:18, h:28}; 
+        } else if(p.type === 'Jump') { 
+            p.pins=[{x:0,y:0},{x:p.span*10,y:0}]; 
+            p.bbox={x:0, y:-2, w:p.span*10, h:4}; 
+        } else if(p.type === 'Pad') {
+            p.bbox={x:-5, y:-5, w:10, h:10}; 
+        } else if(p.type === 'Custom') {
+            p.span = p.span >= 0 ? p.span : 2; p.spanY = p.spanY >= 0 ? p.spanY : 2; 
+            p.color = p.color || '#64748b'; p.pinLayout = p.pinLayout || 'corners';
+            p.bbox = {x: -4, y: -4, w: p.span*10 + 8, h: p.spanY*10 + 8};
+            
+            let tempPins = [];
+            if (p.pinLayout === 'corners') {
+                tempPins.push({x:0, y:0}, {x:p.span*10, y:0}, {x:0, y:p.spanY*10}, {x:p.span*10, y:p.spanY*10});
+            } else if (p.pinLayout === 'lr') {
+                for(let i=0; i<=p.spanY; i++) { tempPins.push({x:0, y:i*10}); tempPins.push({x:p.span*10, y:i*10}); }
+            } else if (p.pinLayout === 'tb') {
+                for(let i=0; i<=p.span; i++) { tempPins.push({x:i*10, y:0}); tempPins.push({x:i*10, y:p.spanY*10}); }
+            } else if (p.pinLayout === 'all') {
+                for(let ix=0; ix<=p.span; ix++) {
+                    for(let iy=0; iy<=p.spanY; iy++) {
+                        if (ix===0 || ix===p.span || iy===0 || iy===p.spanY) tempPins.push({x:ix*10, y:iy*10});
+                    }
+                }
+            }
+            
+            p.pins = [];
+            let seen = new Set();
+            for(let pin of tempPins) {
+                let key = `${pin.x},${pin.y}`;
+                if(!seen.has(key)) { seen.add(key); p.pins.push(pin); }
+            }
+        }
+    };
+
     function loadSnapshot(snapStr) {
         try {
             const d = JSON.parse(snapStr);
             state.parts = d.parts || []; state.lines = d.lines || [];
             state.boardX = d.boardX || 15; state.boardY = d.boardY || 10; state.boardPos = d.boardPos || {x:0, y:0};
+            state.baseScale = d.baseScale || 1.0;
             state.selectedPart = null; state.currentWire = null; state.selectedWire = null; 
             state.multiSelection = []; state.multiSelectedLines = []; state.selectStart = null;
             state.errors = []; state.currentErrorIndex = -1;
+            
+            const pitchSelect = document.getElementById('gridPitchSelect');
+            if(pitchSelect) pitchSelect.value = state.baseScale.toString();
+
+            state.parts.forEach(p => {
+                if (p.type === 'IC8') { p.type = 'IC'; p.span = 4; }
+                if (p.type === 'IC14') { p.type = 'IC'; p.span = 7; }
+                if (p.type === 'IC_SIP8') { p.type = 'IC_SIP'; p.span = 8; }
+                if (p.span === undefined) {
+                    if (p.type === 'R') p.span = 3;
+                    else if (p.type === 'C_Box') p.span = 3; 
+                    else if (p.type === 'Jump') p.span = parseInt(p.label) || 2;
+                    else if (['R_Stand','C_Elect','C_Ceramic','C_Tantalum','D_Stand','D_Si_Stand'].includes(p.type)) p.span = 1;
+                    else if (p.type === 'D' || p.type === 'D_Si' || p.type === 'TR' || p.type === 'TR_MOSFET' || p.type === 'Pot' || p.type === 'Trim') p.span = 2;
+                    else if (p.type === 'DIP_SW') p.span = 4;
+                    else p.span = 2;
+                    if (['R','C_Box','D','D_Si','Jump'].includes(p.type) && p.pins && p.pins.length >= 2) p.span = Math.round((p.pins[1].x - p.pins[0].x) / 10);
+                }
+                recalcPartGeometry(p);
+            });
+
             document.getElementById('boardSizeSelect').value = 'custom';
             document.getElementById('customSizeDiv').style.display = 'flex';
             document.getElementById('customX').value = state.boardX; document.getElementById('customY').value = state.boardY;
@@ -351,11 +456,8 @@
         state.isDarkMode = localStorage.getItem('eff_pro_dark') === 'true';
         if(state.isDarkMode) document.body.classList.add('dark-mode');
 
-        // キーコンフィグの読み込み
         const savedKeys = localStorage.getItem('eff_pro_keys');
-        if (savedKeys) {
-            try { state.keyConfig = { ...defaultKeyConfig, ...JSON.parse(savedKeys) }; } catch(e) {}
-        }
+        if (savedKeys) { try { state.keyConfig = { ...defaultKeyConfig, ...JSON.parse(savedKeys) }; } catch(e) {} }
 
         const saved = localStorage.getItem('effector_pro_backup');
         if (saved) {
@@ -365,25 +467,16 @@
         } else {
             commitState();
         }
-        updateActionUI(); 
-        updateTopButtons();
-        requestRender(); 
-        
-        // ゲームパッドの監視ループ開始
+        updateActionUI(); updateTopButtons(); requestRender(); 
         requestAnimationFrame(gamepadLoop);
     }
 
     window.resetProject = () => { if(confirm("プロジェクトを初期化しますか？保存されていないデータは完全に消去されます。")) { localStorage.removeItem('effector_pro_backup'); localStorage.removeItem('effector_pro_title'); location.reload(); } };
+    window.changeGridPitch = () => { state.baseScale = parseFloat(document.getElementById('gridPitchSelect').value); commitState(); requestRender(); };
 
     function resize() { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; requestRender(); }
     function requestRender() { requestAnimationFrame(render); }
-    window.toggleTheme = () => { 
-        state.isDarkMode = !state.isDarkMode; 
-        document.body.classList.toggle('dark-mode', state.isDarkMode); 
-        localStorage.setItem('eff_pro_dark', state.isDarkMode); 
-        updateActionUI(); 
-        setTimeout(requestRender, 20); 
-    };
+    window.toggleTheme = () => { state.isDarkMode = !state.isDarkMode; document.body.classList.toggle('dark-mode', state.isDarkMode); localStorage.setItem('eff_pro_dark', state.isDarkMode); updateActionUI(); setTimeout(requestRender, 20); };
     window.toggleXray = () => { state.xray = !state.xray; updateTopButtons(); requestRender(); };
     window.toggleFlip = () => { state.flipBoard = !state.flipBoard; updateTopButtons(); if(state.mode==='check') focusError(); requestRender(); };
     window.toggleView = () => { state.viewMode = (state.viewMode === 'pcb' ? 'image' : 'pcb'); updateTopButtons(); requestRender(); };
@@ -416,50 +509,27 @@
         return coords;
     }
 
-    // --- 入力（キーボード）処理 ---
-    function checkKeyMatch(eKey, confKey) {
-        if(!eKey || !confKey) return false;
-        return eKey.toLowerCase() === confKey.toLowerCase();
-    }
+    function checkKeyMatch(eKey, confKey) { if(!eKey || !confKey) return false; return eKey.toLowerCase() === confKey.toLowerCase(); }
 
     window.addEventListener('keydown', e => {
-        // テキスト入力中はショートカットを無効化
         const activeTag = document.activeElement.tagName;
         if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
-
-        // キーコンフィグの設定待ち状態
         if (state.listeningForKey) {
-            e.preventDefault();
-            let key = e.key;
-            if (key === ' ') key = 'Space';
-            state.keyConfig[state.listeningForKey] = key;
-            state.listeningForKey = null;
-            localStorage.setItem('eff_pro_keys', JSON.stringify(state.keyConfig));
-            renderKeyConfigList();
-            return;
+            e.preventDefault(); let key = e.key; if (key === ' ') key = 'Space';
+            state.keyConfig[state.listeningForKey] = key; state.listeningForKey = null;
+            localStorage.setItem('eff_pro_keys', JSON.stringify(state.keyConfig)); renderKeyConfigList(); return;
         }
 
-        let key = e.key;
-        if (key === ' ') key = 'Space';
-        const isCtrl = e.ctrlKey || e.metaKey; // Mac対応
+        let key = e.key; if (key === ' ') key = 'Space';
+        const isCtrl = e.ctrlKey || e.metaKey; 
 
-        // Ctrlショートカット (Undo/Redo)
         if (isCtrl) {
             if (checkKeyMatch(key, state.keyConfig.undo)) { e.preventDefault(); undo(); return; }
             if (checkKeyMatch(key, state.keyConfig.redo)) { e.preventDefault(); redo(); return; }
         }
+        if ([state.keyConfig.up, state.keyConfig.down, state.keyConfig.left, state.keyConfig.right, state.keyConfig.action].some(k => checkKeyMatch(key, k)) || key === 'Backspace') { e.preventDefault(); }
 
-        // デフォルトのスクロール動作などを防ぐ
-        if ([state.keyConfig.up, state.keyConfig.down, state.keyConfig.left, state.keyConfig.right, state.keyConfig.action].some(k => checkKeyMatch(key, k)) || key === 'Backspace') {
-            e.preventDefault();
-        }
-
-        // 削除処理の共通化
-        const handleDelete = () => {
-            if (state.mode === 'select') deleteMultiSelected(); 
-            else if (state.mode === 'draw') deleteSelectedWire();
-            else deleteSelected();
-        };
+        const handleDelete = () => { if (state.mode === 'select') deleteMultiSelected(); else if (state.mode === 'draw') deleteSelectedWire(); else deleteSelected(); };
 
         if (checkKeyMatch(key, state.keyConfig.up)) navMove(0, -10);
         else if (checkKeyMatch(key, state.keyConfig.down)) navMove(0, 10);
@@ -467,7 +537,7 @@
         else if (checkKeyMatch(key, state.keyConfig.right)) navMove(10, 0);
         else if (checkKeyMatch(key, state.keyConfig.action)) handleAction();
         else if (checkKeyMatch(key, state.keyConfig.rotate)) rotateSelected();
-        else if (checkKeyMatch(key, state.keyConfig.delete) || key === 'Backspace') handleDelete(); // Backspaceは常に許容
+        else if (checkKeyMatch(key, state.keyConfig.delete) || key === 'Backspace') handleDelete();
         else if (checkKeyMatch(key, state.keyConfig.modeMove)) setUIMode('move');
         else if (checkKeyMatch(key, state.keyConfig.modeDraw)) setUIMode('draw');
         else if (checkKeyMatch(key, state.keyConfig.modeSelect)) setUIMode('select');
@@ -476,115 +546,50 @@
         else if (checkKeyMatch(key, state.keyConfig.xray)) toggleXray();
     });
 
-    // --- 入力（ゲームパッド）処理 ---
     let gpPrevState = { up: false, down: false, left: false, right: false, action: false, cancel: false };
-    let gpCooldown = 0; // スティック押しっぱなしの連続移動ウェイト
-    let gpInitialDelay = true;
+    let gpCooldown = 0, gpInitialDelay = true;
 
     function gamepadLoop() {
-        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-        const gp = gamepads[0]; // 最初のコントローラーのみ
-        
+        const gp = (navigator.getGamepads ? navigator.getGamepads() : [])[0];
         if (gp) {
             if (gpCooldown > 0) gpCooldown--;
-
-            const threshold = 0.5; // アナログスティックの閾値
-            // 十字キー(D-Pad) または 左アナログスティック
-            let up = gp.buttons[12]?.pressed || gp.axes[1] < -threshold;
-            let down = gp.buttons[13]?.pressed || gp.axes[1] > threshold;
-            let left = gp.buttons[14]?.pressed || gp.axes[0] < -threshold;
-            let right = gp.buttons[15]?.pressed || gp.axes[0] > threshold;
-            
-            // Aボタン(0)で決定、Bボタン(1)でキャンセル
-            let action = gp.buttons[0]?.pressed;
-            let cancel = gp.buttons[1]?.pressed;
-
-            // 移動の処理 (連続入力対応)
-            let moveX = 0, moveY = 0;
-            if (up) moveY -= 10;
-            if (down) moveY += 10;
-            if (left) moveX -= 10;
-            if (right) moveX += 10;
+            const threshold = 0.5;
+            let up = gp.buttons[12]?.pressed || gp.axes[1] < -threshold; let down = gp.buttons[13]?.pressed || gp.axes[1] > threshold;
+            let left = gp.buttons[14]?.pressed || gp.axes[0] < -threshold; let right = gp.buttons[15]?.pressed || gp.axes[0] > threshold;
+            let action = gp.buttons[0]?.pressed; let cancel = gp.buttons[1]?.pressed;
+            let moveX = 0, moveY = 0; if (up) moveY -= 10; if (down) moveY += 10; if (left) moveX -= 10; if (right) moveX += 10;
 
             if ((moveX !== 0 || moveY !== 0)) {
-                if (gpCooldown === 0) {
-                    navMove(moveX, moveY);
-                    gpCooldown = gpInitialDelay ? 15 : 4; // 最初は少し待ってから連続移動
-                    gpInitialDelay = false;
-                }
-            } else {
-                gpInitialDelay = true;
-                gpCooldown = 0;
-            }
+                if (gpCooldown === 0) { navMove(moveX, moveY); gpCooldown = gpInitialDelay ? 15 : 4; gpInitialDelay = false; }
+            } else { gpInitialDelay = true; gpCooldown = 0; }
 
-            // 単発アクションの処理 (押しっぱなし無効)
             if (action && !gpPrevState.action) { handleAction(); }
-            
             if (cancel && !gpPrevState.cancel) {
                 if (state.mode === 'select') clearSelection();
                 else if (state.mode === 'draw') { state.currentWire = null; state.selectedWire = null; requestRender(); }
                 else { state.selectedPart = null; updateInputUI(); requestRender(); }
             }
-
             gpPrevState = { up, down, left, right, action, cancel };
         }
         requestAnimationFrame(gamepadLoop);
     }
 
-    // --- キーコンフィグUIの処理 ---
-    window.openKeyConfigModal = () => {
-        document.getElementById('dataMenuModal').style.display = 'none';
-        state.listeningForKey = null;
-        renderKeyConfigList();
-        document.getElementById('keyConfigModal').style.display = 'flex';
-    };
-
-    window.closeKeyConfigModal = () => {
-        state.listeningForKey = null;
-        document.getElementById('keyConfigModal').style.display = 'none';
-        document.getElementById('dataMenuModal').style.display = 'flex';
-    };
-
-    window.listenForKey = (configKey) => {
-        state.listeningForKey = configKey;
-        renderKeyConfigList();
-    };
-
-    window.resetKeyConfig = () => {
-        if(confirm("キーコンフィグを初期値に戻しますか？")) {
-            state.keyConfig = { ...defaultKeyConfig };
-            localStorage.setItem('eff_pro_keys', JSON.stringify(state.keyConfig));
-            state.listeningForKey = null;
-            renderKeyConfigList();
-        }
-    };
+    window.openKeyConfigModal = () => { document.getElementById('dataMenuModal').style.display = 'none'; state.listeningForKey = null; renderKeyConfigList(); document.getElementById('keyConfigModal').style.display = 'flex'; };
+    window.closeKeyConfigModal = () => { state.listeningForKey = null; document.getElementById('keyConfigModal').style.display = 'none'; document.getElementById('dataMenuModal').style.display = 'flex'; };
+    window.listenForKey = (configKey) => { state.listeningForKey = configKey; renderKeyConfigList(); };
+    window.resetKeyConfig = () => { if(confirm("初期値に戻しますか？")) { state.keyConfig = { ...defaultKeyConfig }; localStorage.setItem('eff_pro_keys', JSON.stringify(state.keyConfig)); state.listeningForKey = null; renderKeyConfigList(); } };
 
     function renderKeyConfigList() {
-        const container = document.getElementById('keyConfigList');
-        container.innerHTML = '';
-        
+        const container = document.getElementById('keyConfigList'); container.innerHTML = '';
         for (const [key, label] of Object.entries(keyLabels)) {
-            const row = document.createElement('div');
-            row.className = 'key-row';
-            
-            const nameDiv = document.createElement('div');
-            nameDiv.style.fontSize = '12px';
-            nameDiv.style.fontWeight = '500';
-            nameDiv.innerText = label;
-            
-            const btn = document.createElement('div');
-            btn.className = `key-btn ${state.listeningForKey === key ? 'listening' : ''}`;
-            btn.innerText = state.listeningForKey === key ? '入力待ち...' : state.keyConfig[key];
-            btn.onclick = () => listenForKey(key);
-            
-            row.appendChild(nameDiv);
-            row.appendChild(btn);
-            container.appendChild(row);
+            const row = document.createElement('div'); row.className = 'key-row';
+            const nameDiv = document.createElement('div'); nameDiv.style.fontSize = '12px'; nameDiv.style.fontWeight = '500'; nameDiv.innerText = label;
+            const btn = document.createElement('div'); btn.className = `key-btn ${state.listeningForKey === key ? 'listening' : ''}`;
+            btn.innerText = state.listeningForKey === key ? '入力待ち...' : state.keyConfig[key]; btn.onclick = () => listenForKey(key);
+            row.appendChild(nameDiv); row.appendChild(btn); container.appendChild(row);
         }
     }
 
-
-    // --- タッチ・マウス操作処理 ---
     let initialPinchDist = null, initialZoom = 1, lastPanX = 0, lastPanY = 0, isPanning = false;
 
     canvas.addEventListener('touchstart', e => {
@@ -619,18 +624,11 @@
         }
     }, {passive: false});
 
-    canvas.addEventListener('touchend', e => {
-        if(isPanning && e.changedTouches.length === 1) {
-            handlePointerDown(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-        }
-        isPanning = false; 
-    });
-    
+    canvas.addEventListener('touchend', e => { if(isPanning && e.changedTouches.length === 1) handlePointerDown(e.changedTouches[0].clientX, e.changedTouches[0].clientY); isPanning = false; });
     canvas.addEventListener('mousedown', e => { lastPanX = e.clientX; lastPanY = e.clientY; isPanning = false; });
     canvas.addEventListener('mousemove', e => {
         if (e.buttons === 1) {
-            isPanning = true;
-            const dx = e.clientX - lastPanX, dy = e.clientY - lastPanY;
+            isPanning = true; const dx = e.clientX - lastPanX, dy = e.clientY - lastPanY;
             if (state.viewMode === 'image') { state.imgPos.x += dx; state.imgPos.y += dy; } else { state.offsetX += dx; state.offsetY += dy; }
             lastPanX = e.clientX; lastPanY = e.clientY; requestRender();
         }
@@ -641,8 +639,8 @@
     function handlePointerDown(clientX, clientY) {
         if (state.viewMode === 'image') return;
         const rect = canvas.getBoundingClientRect();
-        let worldX = (clientX - rect.left - state.offsetX) / state.zoom;
-        let worldY = (clientY - rect.top - state.offsetY) / state.zoom;
+        let worldX = (clientX - rect.left - state.offsetX) / (state.zoom * state.baseScale);
+        let worldY = (clientY - rect.top - state.offsetY) / (state.zoom * state.baseScale);
         if (state.flipBoard) worldX = -worldX + (state.boardPos.x * 2 + state.boardX * GRID);
 
         let snapX = Math.round(worldX / GRID) * GRID;
@@ -683,26 +681,20 @@
         if (state.flipBoard) dx = -dx;
 
         state.cursor.x += dx; state.cursor.y += dy;
-        const viewX = state.cursor.x * state.zoom + state.offsetX, viewY = state.cursor.y * state.zoom + state.offsetY;
+        const viewX = state.cursor.x * (state.zoom * state.baseScale) + state.offsetX, viewY = state.cursor.y * (state.zoom * state.baseScale) + state.offsetY;
         if(viewX < 20) state.offsetX += 50; if(viewX > canvas.width - 20) state.offsetX -= 50;
         if(viewY < 20) state.offsetY += 50; if(viewY > canvas.height - 20) state.offsetY -= 50;
 
         if (state.mode === 'select' && !state.selectStart && (state.multiSelection.length > 0 || state.multiSelectedLines.length > 0)) {
-            state.multiSelection.forEach(p => { p.x += dx; p.y += dy; });
-            state.multiSelectedLines.forEach(l => { l.points.forEach(pt => { pt.x += dx; pt.y += dy; }); });
-            commitState();
+            state.multiSelection.forEach(p => { p.x += dx; p.y += dy; }); state.multiSelectedLines.forEach(l => { l.points.forEach(pt => { pt.x += dx; pt.y += dy; }); }); commitState();
         } else if (state.mode === 'move' && state.selectedPart) {
-            if(state.selectedPart === 'BOARD') { state.boardPos.x += dx; state.boardPos.y += dy; }
-            else { state.selectedPart.x = state.cursor.x; state.selectedPart.y = state.cursor.y; }
-            commitState();
+            if(state.selectedPart === 'BOARD') { state.boardPos.x += dx; state.boardPos.y += dy; } else { state.selectedPart.x = state.cursor.x; state.selectedPart.y = state.cursor.y; } commitState();
         } else if (state.mode === 'draw' && state.currentWire) {
             const pts = state.currentWire.points;
             if (pts.length > 1 && pts[pts.length-2].x === state.cursor.x && pts[pts.length-2].y === state.cursor.y) pts.pop();
             else if (!(pts[pts.length-1].x === state.cursor.x && pts[pts.length-1].y === state.cursor.y)) pts.push({...state.cursor});
         }
-        
-        if (state.mode === 'check') runCheck();
-        requestRender();
+        if (state.mode === 'check') runCheck(); requestRender();
     };
 
     window.handleAction = () => {
@@ -710,58 +702,30 @@
         
         if (state.mode === 'select') {
             if (!state.selectStart) {
-                state.selectStart = { x: state.cursor.x, y: state.cursor.y };
-                state.multiSelection = []; state.multiSelectedLines = [];
+                state.selectStart = { x: state.cursor.x, y: state.cursor.y }; state.multiSelection = []; state.multiSelectedLines = [];
             } else {
                 let x1 = Math.min(state.selectStart.x, state.cursor.x), x2 = Math.max(state.selectStart.x, state.cursor.x);
                 let y1 = Math.min(state.selectStart.y, state.cursor.y), y2 = Math.max(state.selectStart.y, state.cursor.y);
-
-                state.parts.forEach(p => {
-                    if (p === 'BOARD') return;
-                    if (p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2) if (!state.multiSelection.includes(p)) state.multiSelection.push(p);
-                });
-
-                state.lines.forEach(l => {
-                    let allIn = true;
-                    for (let pt of l.points) { if (pt.x < x1 || pt.x > x2 || pt.y < y1 || pt.y > y2) { allIn = false; break; } }
-                    if (allIn && l.points.length > 0) if (!state.multiSelectedLines.includes(l)) state.multiSelectedLines.push(l);
-                });
+                state.parts.forEach(p => { if (p === 'BOARD') return; if (p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2) if (!state.multiSelection.includes(p)) state.multiSelection.push(p); });
+                state.lines.forEach(l => { let allIn = true; for (let pt of l.points) { if (pt.x < x1 || pt.x > x2 || pt.y < y1 || pt.y > y2) { allIn = false; break; } } if (allIn && l.points.length > 0) if (!state.multiSelectedLines.includes(l)) state.multiSelectedLines.push(l); });
                 state.selectStart = null;
             }
         } else if (state.mode === 'draw') {
             if(!state.currentWire) {
-                let hitWire = state.lines.find(l => {
-                    for(let i=0; i<l.points.length-1; i++) if(distToSegment(state.cursor, l.points[i], l.points[i+1]) < 2) return true; return false;
-                });
+                let hitWire = state.lines.find(l => { for(let i=0; i<l.points.length-1; i++) if(distToSegment(state.cursor, l.points[i], l.points[i+1]) < 2) return true; return false; });
                 if(hitWire && !state.selectedWire) { state.selectedWire = hitWire; } else { state.selectedWire = null; state.currentWire = { color: state.wireColor, points: [{...state.cursor}] }; }
             } else { 
                 if(state.currentWire.points.length > 1) { 
-                    let merged = false;
-                    const cw = state.currentWire;
-                    const pFirst = cw.points[0];
-                    const pLast = cw.points[cw.points.length - 1];
-
+                    let merged = false; const cw = state.currentWire, pFirst = cw.points[0], pLast = cw.points[cw.points.length - 1];
                     for(let i = 0; i < state.lines.length; i++) {
-                        let l = state.lines[i];
-                        if(l.color !== cw.color) continue;
-                        
-                        const lFirst = l.points[0];
-                        const lLast = l.points[l.points.length - 1];
-
-                        if(pFirst.x === lLast.x && pFirst.y === lLast.y) {
-                            l.points = l.points.concat(cw.points.slice(1)); merged = true; break;
-                        } else if(pLast.x === lFirst.x && pLast.y === lFirst.y) {
-                            l.points = cw.points.slice(0, -1).concat(l.points); merged = true; break;
-                        } else if(pFirst.x === lFirst.x && pFirst.y === lFirst.y) {
-                            cw.points.reverse(); l.points = cw.points.slice(0, -1).concat(l.points); merged = true; break;
-                        } else if(pLast.x === lLast.x && pLast.y === lLast.y) {
-                            cw.points.reverse(); l.points = l.points.concat(cw.points.slice(1)); merged = true; break;
-                        }
+                        let l = state.lines[i]; if(l.color !== cw.color) continue;
+                        const lFirst = l.points[0], lLast = l.points[l.points.length - 1];
+                        if(pFirst.x === lLast.x && pFirst.y === lLast.y) { l.points = l.points.concat(cw.points.slice(1)); merged = true; break; } 
+                        else if(pLast.x === lFirst.x && pLast.y === lFirst.y) { l.points = cw.points.slice(0, -1).concat(l.points); merged = true; break; } 
+                        else if(pFirst.x === lFirst.x && pFirst.y === lFirst.y) { cw.points.reverse(); l.points = cw.points.slice(0, -1).concat(l.points); merged = true; break; } 
+                        else if(pLast.x === lLast.x && pLast.y === lLast.y) { cw.points.reverse(); l.points = l.points.concat(cw.points.slice(1)); merged = true; break; }
                     }
-
-                    if(!merged) {
-                        state.lines.push(state.currentWire); 
-                    }
+                    if(!merged) { state.lines.push(state.currentWire); }
                     commitState(); 
                 } 
                 state.currentWire = null; 
@@ -778,33 +742,29 @@
                 if (hit) { state.selectedPart = hit; state.cursor.x = hit.x; state.cursor.y = hit.y; }
             }
         }
-        if (state.mode === 'check') runCheck();
-        requestRender();
+        if (state.mode === 'check') runCheck(); requestRender();
     };
 
     window.addPart = (type) => {
-        const p = { type, x: state.cursor.x, y: state.cursor.y, rot: 0, label: '', pins: [], bbox: {x:0, y:0, w:10, h:10} };
+        const p = { type, x: state.cursor.x, y: state.cursor.y, rot: 0, label: '', pins: [], bbox: {x:0, y:0, w:10, h:10}, span: 2 };
         
-        if(type==='R'){ p.label='10k'; p.pins=[{x:0,y:0},{x:30,y:0}]; p.bbox={x:2, y:-4, w:26, h:8}; } 
-        else if(type==='C_Box'){ p.label='0.1u'; p.pins=[{x:0,y:0},{x:30,y:0}]; p.bbox={x:1, y:-5, w:28, h:10}; } 
-        else if(type==='C_Elect'){ p.label='10u'; p.pins=[{x:0,y:0},{x:10,y:0}]; p.bbox={x:-1, y:-4.5, w:12, h:9}; } 
-        else if(type==='D'){ p.label='1N4148'; p.pins=[{x:0,y:0},{x:20,y:0}]; p.bbox={x:4, y:-4, w:12, h:8}; } 
-        else if(type==='IC8'){ p.type='IC8'; p.label='IC'; p.pins=[{x:0,y:0},{x:0,y:10},{x:0,y:20},{x:0,y:30},{x:30,y:0},{x:30,y:10},{x:30,y:20},{x:30,y:30}]; p.bbox={x:-4, y:-4, w:38, h:38}; }
-        else if(type==='TR'){ p.label='Q'; p.pins=[{x:0,y:0},{x:10,y:0},{x:20,y:0}]; p.bbox={x:-2, y:-5, w:24, h:10}; } 
-        else if(type==='Pot'){ p.label='100k B'; p.pins=[{x:0,y:0},{x:10,y:0},{x:20,y:0}]; p.bbox={x:0, y:-15, w:20, h:20}; }
-        else if(type==='Trim'){ p.label='10k'; p.pins=[{x:0,y:0},{x:10,y:0},{x:20,y:0}]; p.bbox={x:-2, y:-8, w:24, h:16}; }
-        else if(type==='SW'){ p.label='DPDT'; p.pins=[{x:0,y:0},{x:0,y:10},{x:0,y:20},{x:10,y:0},{x:10,y:10},{x:10,y:20}]; p.bbox={x:-4, y:-4, w:18, h:28}; }
-        else if(type==='Jump'){ p.label='2'; p.pins=[{x:0,y:0},{x:20,y:0}]; p.bbox={x:0, y:-2, w:20, h:4}; }
+        if(type==='R'){ p.label='10k'; p.span=3; } 
+        else if(type==='C_Box'){ p.label='0.1u'; p.span=2; } 
+        else if(type==='C_Elect'){ p.label='10u'; p.span=1; } 
+        else if(type==='D'){ p.label='1N4148'; p.span=2; } 
+        else if(type==='IC'){ p.label='IC'; p.span=4; } 
+        else if(type==='TR'){ p.label='Q'; p.span=2; } 
+        else if(type==='SW'){ p.label='DPDT'; p.span=1; }
         else if(type.startsWith('Pad_')) {
             p.type = 'Pad'; const padType = type.split('_')[1]; p.label = padType;
             const padColors = { '9V':'#e84118', 'GND':'#4cd137', 'IN':'#00a8ff', 'OUT':'#9c88ff', 'POT':'#ca8a04', 'SW-IN':'#00a8ff', 'SW-OUT':'#9c88ff' };
             p.color = padColors[padType] || '#94a3b8';
-            p.bbox = {x:-5, y:-5, w:10, h:10};
         }
+        else if(type==='Others') { p.type='Pot'; p.label='100k B'; p.span=2; } // Othersは初期Pot
 
+        recalcPartGeometry(p);
         state.parts.push(p); state.selectedPart = p; commitState(); 
-        if (state.mode === 'check') runCheck();
-        requestRender();
+        if (state.mode === 'check') runCheck(); requestRender();
     };
 
     window.changePartType = (newType) => {
@@ -815,28 +775,19 @@
             p.type = 'Pad'; const padType = newType.split('_')[1]; p.label = padType;
             const padColors = { '9V':'#e84118', 'GND':'#4cd137', 'IN':'#00a8ff', 'OUT':'#9c88ff', 'POT':'#ca8a04', 'SW-IN':'#00a8ff', 'SW-OUT':'#9c88ff', 'Custom': '#cbd5e1' };
             p.color = padColors[padType] || '#cbd5e1'; 
-            p.bbox = {x:-5, y:-5, w:10, h:10};
+        } else if (['Pot', 'Trim', 'Jump', 'Custom'].includes(newType)) {
+            p.type = newType;
+            if (newType === 'Custom') { p.spanY = p.spanY || 2; p.color = p.color || '#64748b'; p.pinLayout = p.pinLayout || 'corners'; p.span = Math.max(0, p.span); }
+            else if (newType === 'Jump') { p.span = Math.max(1, p.span); p.label = (p.span + 1).toString(); }
+            else { p.span = Math.max(2, p.span); } 
         } else {
             p.type = newType;
-            if(newType==='R'){ p.pins=[{x:0,y:0},{x:30,y:0}]; p.bbox={x:2, y:-4, w:26, h:8}; } 
-            else if(newType==='R_Stand'){ p.pins=[{x:0,y:0},{x:10,y:0}]; p.bbox={x:-5, y:-5, w:15, h:10}; }
-            else if(newType==='C_Box'){ p.pins=[{x:0,y:0},{x:30,y:0}]; p.bbox={x:1, y:-5, w:28, h:10}; } 
-            else if(newType==='C_Elect'){ p.pins=[{x:0,y:0},{x:10,y:0}]; p.bbox={x:-1, y:-4.5, w:12, h:9}; } 
-            else if(newType==='C_Ceramic'){ p.pins=[{x:0,y:0},{x:10,y:0}]; p.bbox={x:-3, y:-5, w:16, h:10}; }
-            else if(newType==='C_Tantalum'){ p.pins=[{x:0,y:0},{x:10,y:0}]; p.bbox={x:0,y:-5,w:10,h:10}; }
-            else if(newType==='D'){ p.pins=[{x:0,y:0},{x:20,y:0}]; p.bbox={x:4, y:-4, w:12, h:8}; } 
-            else if(newType==='D_Stand'){ p.pins=[{x:0,y:0},{x:10,y:0}]; p.bbox={x:-4, y:-4, w:14, h:8}; }
-            else if(newType==='D_Si'){ p.pins=[{x:0,y:0},{x:30,y:0}]; p.bbox={x:6, y:-4, w:18, h:8}; } 
-            else if(newType==='D_Si_Stand'){ p.pins=[{x:0,y:0},{x:10,y:0}]; p.bbox={x:-5, y:-5, w:15, h:10}; }
-            else if(newType==='IC8'){ p.pins=[{x:0,y:0},{x:0,y:10},{x:0,y:20},{x:0,y:30},{x:30,y:0},{x:30,y:10},{x:30,y:20},{x:30,y:30}]; p.bbox={x:-4, y:-4, w:38, h:38}; }
-            else if(newType==='IC14'){ p.pins=[]; for(let i=0;i<7;i++){p.pins.push({x:0,y:i*10}); p.pins.push({x:30,y:i*10});} p.bbox={x:-4, y:-4, w:38, h:68}; }
-            else if(newType==='IC_SIP8'){ p.pins=[]; for(let i=0;i<8;i++){p.pins.push({x:0,y:i*10});} p.bbox={x:-4, y:-4, w:18, h:78}; }
-            else if(newType==='TR'){ p.pins=[{x:0,y:0},{x:10,y:0},{x:20,y:0}]; p.bbox={x:-2, y:-5, w:24, h:10}; }
-            else if(newType==='TR_MOSFET'){ p.pins=[{x:0,y:0},{x:10,y:0},{x:20,y:0}]; p.bbox={x:-2, y:-8, w:24, h:14}; }
+            if(['R_Stand','C_Elect','C_Ceramic','C_Tantalum','D_Stand','D_Si_Stand'].includes(newType)) p.span = 1;
+            else if (['R'].includes(newType)) p.span = 3;
+            else if (['C_Box','D','D_Si','TR','TR_MOSFET'].includes(newType)) p.span = 2;
         }
-        commitState(); updateInputUI();
-        if (state.mode === 'check') runCheck();
-        requestRender();
+        recalcPartGeometry(p); commitState(); updateInputUI();
+        if (state.mode === 'check') runCheck(); requestRender();
     };
 
     window.undoWirePoint = () => { if(state.currentWire && state.currentWire.points.length > 1) { state.currentWire.points.pop(); requestRender(); } };
@@ -853,70 +804,35 @@
             const w2 = { color: state.selectedWire.color, points: state.selectedWire.points.slice(splitIdx + 1) };
             state.lines = state.lines.filter(l => l !== state.selectedWire);
             if (w1.points.length > 1) state.lines.push(w1); if (w2.points.length > 1) state.lines.push(w2);
-            state.selectedWire = null; commitState(); 
-            if (state.mode === 'check') runCheck();
-            requestRender();
+            state.selectedWire = null; commitState(); if (state.mode === 'check') runCheck(); requestRender();
         }
     };
 
     window.clearSelection = () => { state.multiSelection = []; state.multiSelectedLines = []; state.selectStart = null; requestRender(); };
     window.deleteMultiSelected = () => {
         if(state.multiSelection.length > 0 || state.multiSelectedLines.length > 0) {
-            state.parts = state.parts.filter(p => !state.multiSelection.includes(p));
-            state.lines = state.lines.filter(l => !state.multiSelectedLines.includes(l));
-            state.multiSelection = []; state.multiSelectedLines = []; state.selectStart = null;
-            commitState(); if (state.mode === 'check') runCheck(); requestRender();
+            state.parts = state.parts.filter(p => !state.multiSelection.includes(p)); state.lines = state.lines.filter(l => !state.multiSelectedLines.includes(l));
+            state.multiSelection = []; state.multiSelectedLines = []; state.selectStart = null; commitState(); if (state.mode === 'check') runCheck(); requestRender();
         }
     };
 
     window.setUIMode = (m) => {
         if (state.mode === 'select' && m !== 'select') { state.multiSelection = []; state.multiSelectedLines = []; state.selectStart = null; }
         state.mode = m; state.selectedWire = null; if(m!=='move' && state.selectedPart==='BOARD') state.selectedPart = null;
-        
-        document.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active'));
-        const toolsEl = document.getElementById(`${m}-tools`); if(toolsEl) toolsEl.classList.add('active');
-
-        document.querySelectorAll('.mode-tab').forEach(el => { el.classList.remove('active'); });
-        const activeTab = document.getElementById(`tab${m.charAt(0).toUpperCase() + m.slice(1)}`); if(activeTab) activeTab.classList.add('active'); 
-        
-        if (m === 'check') {
-            runCheck();
-            if(state.errors.length > 0) { state.currentErrorIndex = 0; focusError(); }
-        } else {
-            state.errors = []; state.currentErrorIndex = -1;
-        }
-
+        document.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active')); const toolsEl = document.getElementById(`${m}-tools`); if(toolsEl) toolsEl.classList.add('active');
+        document.querySelectorAll('.mode-tab').forEach(el => { el.classList.remove('active'); }); const activeTab = document.getElementById(`tab${m.charAt(0).toUpperCase() + m.slice(1)}`); if(activeTab) activeTab.classList.add('active'); 
+        if (m === 'check') { runCheck(); if(state.errors.length > 0) { state.currentErrorIndex = 0; focusError(); } } else { state.errors = []; state.currentErrorIndex = -1; }
         updateActionUI(); requestRender();
     };
 
     function updateActionUI() {
         const container = document.getElementById('part-actions-container'); if (!container) return;
-
         if (state.mode === 'draw') {
-            container.innerHTML = `
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <button onclick="undoWirePoint()" class="btn-default" style="height:44px;">戻る (1点)</button>
-                    <div style="display:flex; gap:8px;">
-                        <button onclick="deleteWireSegment()" class="btn-default" style="flex:1; height:44px;">区間削除</button>
-                        <button onclick="deleteSelectedWire()" class="btn-danger" style="flex:1; height:44px;">線削除</button>
-                    </div>
-                </div>
-            `;
+            container.innerHTML = `<div style="display:flex; flex-direction:column; gap:8px;"><button onclick="undoWirePoint()" class="btn-default" style="height:44px;">戻る (1点)</button><div style="display:flex; gap:8px;"><button onclick="deleteWireSegment()" class="btn-default" style="flex:1; height:44px;">区間削除</button><button onclick="deleteSelectedWire()" class="btn-danger" style="flex:1; height:44px;">線削除</button></div></div>`;
         } else if (state.mode === 'select') {
-            container.innerHTML = `
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <button onclick="clearSelection()" class="btn-default" style="height:44px;">選択クリア</button>
-                    <button onclick="deleteMultiSelected()" class="btn-danger" style="height:44px;">選択削除</button>
-                </div>
-            `;
+            container.innerHTML = `<div style="display:flex; flex-direction:column; gap:8px;"><button onclick="clearSelection()" class="btn-default" style="height:44px;">選択クリア</button><button onclick="deleteMultiSelected()" class="btn-danger" style="height:44px;">選択削除</button></div>`;
         } else {
-            container.innerHTML = `
-                <div id="dynamic-input-container" style="display:flex; flex-direction:column; gap:8px; flex:1;"></div>
-                <div style="display:flex; gap:8px;">
-                    <button onclick="rotateSelected()" class="btn-default" style="flex:1; height:44px;">回転</button>
-                    <button onclick="deleteSelected()" class="btn-danger" style="flex:1; height:44px;">削除</button>
-                </div>
-            `;
+            container.innerHTML = `<div id="dynamic-input-container" style="display:flex; flex-direction:column; gap:8px; flex:1; justify-content:center;"></div><div style="display:flex; gap:8px;"><button onclick="rotateSelected()" class="btn-default" style="flex:1; height:44px;">回転</button><button onclick="deleteSelected()" class="btn-danger" style="flex:1; height:44px;">削除</button></div>`;
             updateInputUI();
         }
     }
@@ -925,193 +841,171 @@
     window.deleteSelected = () => { if(state.selectedPart !== 'BOARD') { state.parts = state.parts.filter(p => p !== state.selectedPart); state.selectedPart = null; commitState(); if(state.mode==='check') runCheck(); requestRender(); } };
     window.setWireColor = (c, btn) => { state.wireColor = c; document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); };
 
+    window.adjustPartSpan = (axis, isPlus) => {
+        if(!state.selectedPart) return;
+        let p = state.selectedPart;
+        let delta = isPlus ? 1 : -1;
+        if (axis === 1) {
+            let min = 1, max = 30;
+            if(p.type === 'DIP_SW') { min = 1; max = 12; }
+            if(p.type === 'IC' || p.type === 'IC_SIP') { min = 2; max = 20; }
+            if(p.type === 'Custom') min = 0;
+            if(['Trim', 'Pot', 'TR', 'TR_MOSFET'].includes(p.type)) min = 2;
+            let newSpan = p.span + delta;
+            if (newSpan >= min && newSpan <= max) { p.span = newSpan; if(p.type === 'Jump') p.label = (newSpan+1).toString(); }
+        } else if (axis === 2) {
+            let newSpanY = p.spanY + delta;
+            if (newSpanY >= 0 && newSpanY <= 30) p.spanY = newSpanY;
+        }
+        recalcPartGeometry(p); commitState(); if(state.mode === 'check') runCheck(); requestRender(); updateInputUI(); 
+    };
+
     function updateInputUI() {
         const container = document.getElementById('dynamic-input-container'); if (!container) return;
-
-        if (!state.selectedPart || state.selectedPart === 'BOARD') {
-            container.innerHTML = `<input type="text" placeholder="パーツ未選択" disabled style="width:100%; box-sizing:border-box; background:var(--btn-hover); color:var(--text); opacity:0.5; border:1px solid var(--border); padding:8px; border-radius:4px; text-align:center;">`;
-            return;
+        if (!state.selectedPart || state.selectedPart === 'BOARD') { container.innerHTML = `<input type="text" placeholder="パーツ未選択" disabled style="width:100%; box-sizing:border-box; background:var(--btn-hover); color:var(--text); opacity:0.5; border:1px solid var(--border); padding:8px; border-radius:4px; text-align:center;">`; return; }
+        
+        const p = state.selectedPart; let typeSelector = '';
+        
+        if (p.type.startsWith('R')) typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;"><option value="R" ${p.type==='R'?'selected':''}>通常 (横)</option><option value="R_Stand" ${p.type==='R_Stand'?'selected':''}>直立 (縦)</option></select>`;
+        else if (p.type.startsWith('C_')) typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;"><option value="C_Box" ${p.type==='C_Box'?'selected':''}>フィルム</option><option value="C_Elect" ${p.type==='C_Elect'?'selected':''}>電解</option><option value="C_Ceramic" ${p.type==='C_Ceramic'?'selected':''}>セラミック</option><option value="C_Tantalum" ${p.type==='C_Tantalum'?'selected':''}>タンタル</option></select>`;
+        else if (p.type.startsWith('D')) typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;"><option value="D" ${p.type==='D'?'selected':''}>ガラス (横)</option><option value="D_Stand" ${p.type==='D_Stand'?'selected':''}>ガラス (立)</option><option value="D_Si" ${p.type==='D_Si'?'selected':''}>シリコン (横)</option><option value="D_Si_Stand" ${p.type==='D_Si_Stand'?'selected':''}>シリコン (立)</option></select>`;
+        else if (p.type.startsWith('IC')) typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;"><option value="IC" ${p.type==='IC'?'selected':''}>DIP (2列)</option><option value="IC_SIP" ${p.type==='IC_SIP'?'selected':''}>SIP (1列縦型)</option></select>`;
+        else if (p.type.startsWith('TR')) typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;"><option value="TR" ${p.type==='TR'?'selected':''}>TO-92</option><option value="TR_MOSFET" ${p.type==='TR_MOSFET'?'selected':''}>MOSFET (TO-220)</option></select>`;
+        else if (p.type === 'Pad') typeSelector = `<select onchange="changePartType('Pad_' + this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;"><option value="9V" ${p.label==='9V'?'selected':''}>9V</option><option value="GND" ${p.label==='GND'?'selected':''}>GND</option><option value="IN" ${p.label==='IN'?'selected':''}>IN</option><option value="OUT" ${p.label==='OUT'?'selected':''}>OUT</option><option value="POT" ${p.label==='POT'?'selected':''}>POT線</option><option value="SW-IN" ${p.label==='SW-IN'?'selected':''}>SW-IN</option><option value="SW-OUT" ${p.label==='SW-OUT'?'selected':''}>SW-OUT</option><option value="Custom" ${!['9V','GND','IN','OUT','POT','SW-IN','SW-OUT'].includes(p.label)?'selected':''}>カスタム</option></select>`;
+        else if (p.type === 'SW' || p.type === 'DIP_SW') typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;"><option value="SW" ${p.type==='SW'?'selected':''}>トグル (DPDT)</option><option value="DIP_SW" ${p.type==='DIP_SW'?'selected':''}>DIP Switch</option></select>`;
+        else if (['Pot', 'Trim', 'Jump', 'Custom'].includes(p.type)) {
+            typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;">
+                <option value="Pot" ${p.type==='Pot'?'selected':''}>Pot (可変抵抗)</option>
+                <option value="Trim" ${p.type==='Trim'?'selected':''}>Trim (半固定)</option>
+                <option value="Jump" ${p.type==='Jump'?'selected':''}>Jump (ジャンパー線)</option>
+                <option value="Custom" ${p.type==='Custom'?'selected':''}>Custom (カスタム部品)</option>
+            </select>`;
         }
-        
-        const p = state.selectedPart;
-        let typeSelector = '';
-        
-        if (p.type.startsWith('R')) {
-            typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;">
-                <option value="R" ${p.type==='R'?'selected':''}>通常 (横)</option><option value="R_Stand" ${p.type==='R_Stand'?'selected':''}>直立 (縦)</option>
-            </select>`;
-        } else if (p.type.startsWith('C_')) {
-            typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;">
-                <option value="C_Box" ${p.type==='C_Box'?'selected':''}>フィルム</option><option value="C_Elect" ${p.type==='C_Elect'?'selected':''}>電解</option>
-                <option value="C_Ceramic" ${p.type==='C_Ceramic'?'selected':''}>セラミック</option><option value="C_Tantalum" ${p.type==='C_Tantalum'?'selected':''}>タンタル</option>
-            </select>`;
-        } else if (p.type.startsWith('D')) {
-            typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;">
-                <option value="D" ${p.type==='D'?'selected':''}>ガラス (横)</option><option value="D_Stand" ${p.type==='D_Stand'?'selected':''}>ガラス (立)</option>
-                <option value="D_Si" ${p.type==='D_Si'?'selected':''}>シリコン (横)</option><option value="D_Si_Stand" ${p.type==='D_Si_Stand'?'selected':''}>シリコン (立)</option>
-            </select>`;
-        } else if (p.type.startsWith('IC')) {
-            typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;">
-                <option value="IC8" ${p.type==='IC8'?'selected':''}>8ピン</option><option value="IC14" ${p.type==='IC14'?'selected':''}>14ピン</option>
-                <option value="IC_SIP8" ${p.type==='IC_SIP8'?'selected':''}>SIP8 (縦型)</option>
-            </select>`;
-        } else if (p.type.startsWith('TR')) {
-            typeSelector = `<select onchange="changePartType(this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;">
-                <option value="TR" ${p.type==='TR'?'selected':''}>TO-92</option><option value="TR_MOSFET" ${p.type==='TR_MOSFET'?'selected':''}>MOSFET (TO-220)</option>
-            </select>`;
-        } else if (p.type === 'Pad') {
-            typeSelector = `<select onchange="changePartType('Pad_' + this.value)" style="width:100%; box-sizing:border-box; padding:8px; border-radius:4px;">
-                <option value="9V" ${p.label==='9V'?'selected':''}>9V</option><option value="GND" ${p.label==='GND'?'selected':''}>GND</option>
-                <option value="IN" ${p.label==='IN'?'selected':''}>IN</option><option value="OUT" ${p.label==='OUT'?'selected':''}>OUT</option>
-                <option value="POT" ${p.label==='POT'?'selected':''}>POT線</option><option value="SW-IN" ${p.label==='SW-IN'?'selected':''}>SW-IN</option><option value="SW-OUT" ${p.label==='SW-OUT'?'selected':''}>SW-OUT</option>
-                <option value="Custom" ${!['9V','GND','IN','OUT','POT','SW-IN','SW-OUT'].includes(p.label)?'selected':''}>カスタム</option>
-            </select>`;
+
+        let sizeControl = '';
+        if (p.type === 'Custom') {
+            sizeControl = `
+                <div style="display:flex; gap:4px; flex-direction:column; background:var(--panel-inset); padding:4px 8px; border-radius:4px; border:1px solid var(--border);">
+                    <div style="display:flex; align-items:center;">
+                        <span style="font-size:12px; font-weight:bold; flex:1;">横幅(穴数):</span>
+                        <button onclick="adjustPartSpan(1, false)" class="btn-default" style="width:28px; height:24px; padding:0;">-</button>
+                        <span style="font-size:13px; font-weight:bold; width:24px; text-align:center;">${p.span + 1}</span>
+                        <button onclick="adjustPartSpan(1, true)" class="btn-default" style="width:28px; height:24px; padding:0;">+</button>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <span style="font-size:12px; font-weight:bold; flex:1;">縦幅(穴数):</span>
+                        <button onclick="adjustPartSpan(2, false)" class="btn-default" style="width:28px; height:24px; padding:0;">-</button>
+                        <span style="font-size:13px; font-weight:bold; width:24px; text-align:center;">${p.spanY + 1}</span>
+                        <button onclick="adjustPartSpan(2, true)" class="btn-default" style="width:28px; height:24px; padding:0;">+</button>
+                    </div>
+                </div>
+            `;
+        } else if (p.type !== 'Pad' && p.type !== 'SW') {
+            let labelText = (p.type === 'DIP_SW' || p.type.startsWith('IC')) ? 'ピン/連数:' : '幅(穴数):';
+            let displaySpan = ['R', 'R_Stand', 'C_Box', 'C_Elect', 'C_Ceramic', 'C_Tantalum', 'D', 'D_Stand', 'D_Si', 'D_Si_Stand', 'Jump', 'TR', 'TR_MOSFET', 'Pot', 'Trim'].includes(p.type) ? p.span + 1 : p.span;
+            sizeControl = `
+                <div style="display:flex; gap:6px; align-items:center; background:var(--panel-inset); padding:4px 8px; border-radius:4px; border:1px solid var(--border);">
+                    <span style="font-size:12px; font-weight:bold; white-space:nowrap; flex:1;">${labelText}</span>
+                    <button onclick="adjustPartSpan(1, false)" class="btn-default" style="width:32px; height:28px; padding:0; font-size:16px; font-weight:bold;">-</button>
+                    <span style="font-size:15px; font-weight:bold; width:28px; text-align:center;">${displaySpan}</span>
+                    <button onclick="adjustPartSpan(1, true)" class="btn-default" style="width:32px; height:28px; padding:0; font-size:16px; font-weight:bold;">+</button>
+                </div>
+            `;
         }
 
         let inputHtml = '';
         if (p.type === 'Pad') {
+            inputHtml = `<div style="display:flex; gap:6px; align-items:center;"><input type="color" id="padColor" value="${p.color}" style="width:44px; height:36px; padding:2px; border-radius:4px; border:1px solid var(--border);" onchange="applyDynamicInput()"><input type="text" id="partTxt" value="${p.label}" style="flex:1; width:0; padding:8px; box-sizing:border-box;" placeholder="ラベル..." oninput="applyDynamicInput()"></div>`;
+        } else if (p.type === 'Custom') {
             inputHtml = `
                 <div style="display:flex; gap:6px; align-items:center;">
-                    <input type="color" id="padColor" value="${p.color}" style="width:44px; height:36px; padding:2px; border-radius:4px; border:1px solid var(--border);" onchange="applyDynamicInput()">
+                    <input type="color" id="customColor" value="${p.color}" style="width:44px; height:36px; padding:2px; border-radius:4px; border:1px solid var(--border);" onchange="applyDynamicInput()">
                     <input type="text" id="partTxt" value="${p.label}" style="flex:1; width:0; padding:8px; box-sizing:border-box;" placeholder="ラベル..." oninput="applyDynamicInput()">
                 </div>
+                <select id="customPinLayout" onchange="applyDynamicInput()" style="width:100%; padding:8px; box-sizing:border-box; margin-top:4px;">
+                    <option value="corners" ${p.pinLayout==='corners'?'selected':''}>ピン配置: 四隅のみ</option>
+                    <option value="lr" ${p.pinLayout==='lr'?'selected':''}>ピン配置: 左右のみ</option>
+                    <option value="tb" ${p.pinLayout==='tb'?'selected':''}>ピン配置: 上下のみ</option>
+                    <option value="all" ${p.pinLayout==='all'?'selected':''}>ピン配置: 外周すべて</option>
+                </select>
             `;
         } else if (p.type.startsWith('R') || p.type.startsWith('C_')) {
             let val = parseFloat(p.label) || (p.type.startsWith('R') ? 10 : 0.1);
             let unit = p.label.replace(/[\d\.]/g, '').trim() || (p.type.startsWith('R') ? 'k' : 'u');
             if(p.type.startsWith('R') && !['R','k','M'].includes(unit)) unit = 'k';
             if(p.type.startsWith('C_') && !['p','n','u'].includes(unit)) unit = 'u';
-            let unitOptions = p.type.startsWith('R') ? 
-                `<option value="R" ${unit==='R'?'selected':''}>Ω</option><option value="k" ${unit==='k'?'selected':''}>kΩ</option><option value="M" ${unit==='M'?'selected':''}>MΩ</option>` :
-                `<option value="p" ${unit==='p'?'selected':''}>pF</option><option value="n" ${unit==='n'?'selected':''}>nF</option><option value="u" ${unit==='u'?'selected':''}>uF</option>`;
-            inputHtml = `
-                <div style="display:flex; gap:6px;">
-                    <input type="number" id="partNum" value="${val}" step="any" style="flex:1; width:0; padding:8px; box-sizing:border-box;" oninput="applyDynamicInput()">
-                    <select id="partUnit" style="width:70px; padding:8px; box-sizing:border-box;" onchange="applyDynamicInput()">
-                        ${unitOptions}
-                    </select>
-                </div>
-            `;
-        } else if (p.type === 'Jump') {
-            let val = parseInt(p.label) || 2;
-            inputHtml = `
-                <div style="display:flex; gap:6px; align-items:center;">
-                    <span style="color:var(--text); font-size:12px; white-space:nowrap;">長さ:</span>
-                    <input type="number" id="partNum" value="${val}" min="1" max="20" style="flex:1; width:0; padding:8px; box-sizing:border-box;" oninput="applyDynamicInput()">
-                    <span style="color:var(--text); font-size:12px;">マス</span>
-                </div>
-            `;
+            let unitOptions = p.type.startsWith('R') ? `<option value="R" ${unit==='R'?'selected':''}>Ω</option><option value="k" ${unit==='k'?'selected':''}>kΩ</option><option value="M" ${unit==='M'?'selected':''}>MΩ</option>` : `<option value="p" ${unit==='p'?'selected':''}>pF</option><option value="n" ${unit==='n'?'selected':''}>nF</option><option value="u" ${unit==='u'?'selected':''}>uF</option>`;
+            inputHtml = `<div style="display:flex; gap:6px;"><input type="number" id="partNum" value="${val}" step="any" style="flex:1; width:0; padding:8px; box-sizing:border-box;" oninput="applyDynamicInput()"><select id="partUnit" style="width:70px; padding:8px; box-sizing:border-box;" onchange="applyDynamicInput()">${unitOptions}</select></div>`;
         } else {
             inputHtml = `<input type="text" id="partTxt" value="${p.label}" style="width:100%; padding:8px; box-sizing:border-box;" placeholder="名称・値..." oninput="applyDynamicInput()">`;
         }
-        container.innerHTML = typeSelector + inputHtml;
+        
+        container.innerHTML = typeSelector + sizeControl + inputHtml;
     }
 
     window.applyDynamicInput = () => {
         if(!state.selectedPart) return;
-        const num = document.getElementById('partNum'), unit = document.getElementById('partUnit'), txt = document.getElementById('partTxt'), padColor = document.getElementById('padColor'), p = state.selectedPart;
+        const num = document.getElementById('partNum'), unit = document.getElementById('partUnit'), txt = document.getElementById('partTxt');
+        const padColor = document.getElementById('padColor'), customColor = document.getElementById('customColor'), customPinLayout = document.getElementById('customPinLayout');
+        const p = state.selectedPart;
 
-        if (p.type === 'Pad' && padColor && txt) {
-            p.color = padColor.value; p.label = txt.value;
-        } else if (p.type === 'Jump' && num) {
-            let val = parseInt(num.value); if(isNaN(val) || val < 1) val = 1;
-            p.label = val.toString(); p.pins[1] = {x: val * 10, y: 0}; p.bbox.w = val * 10;
-        } else if (num && unit) p.label = num.value + unit.value; 
+        if (p.type === 'Pad' && padColor && txt) { p.color = padColor.value; p.label = txt.value; } 
+        else if (p.type === 'Custom') { 
+            if(customColor) p.color = customColor.value; 
+            if(customPinLayout) p.pinLayout = customPinLayout.value; 
+            if(txt) p.label = txt.value; 
+            recalcPartGeometry(p); 
+        }
+        else if (num && unit) p.label = num.value + unit.value; 
         else if (txt) p.label = txt.value;
-        
         commitState(); if(state.mode==='check') runCheck(); requestRender();
     }
 
     window.runCheck = () => {
-        state.errors = [];
-        let allWirePoints = []; let allPinCoords = [];
+        state.errors = []; let allWirePoints = []; let allPinCoords = [];
         state.lines.forEach(l => l.points.forEach(pt => allWirePoints.push(pt)));
         state.parts.forEach(p => { getPinWorldCoords(p).forEach(c => allPinCoords.push({part: p, coord: c})); });
 
-        let pinMap = {}; 
-        let aabbs = [];
-
+        let pinMap = {}; let aabbs = [];
         state.parts.forEach((p, idx) => {
             let worldCoords = getPinWorldCoords(p);
             worldCoords.forEach((c, pinIndex) => {
                 let hasWire = allWirePoints.some(w => Math.hypot(w.x - c.x, w.y - c.y) < 2);
                 let hasOtherPin = allPinCoords.some(op => op.part !== p && Math.hypot(op.coord.x - c.x, op.coord.y - c.y) < 2);
-                if (!hasWire && !hasOtherPin) {
-                    state.errors.push({ type: 'floating', msg: `${p.type}(${p.label || '無名'}) が未接続`, parts: [p], x: c.x, y: c.y });
-                }
-                
-                let key = `${c.x},${c.y}`;
-                if(!pinMap[key]) pinMap[key] = [];
-                pinMap[key].push({part: p});
+                if (!hasWire && !hasOtherPin) state.errors.push({ type: 'floating', msg: `${p.type}(${p.label || '無名'}) が未接続`, parts: [p], x: c.x, y: c.y });
+                let key = `${c.x},${c.y}`; if(!pinMap[key]) pinMap[key] = []; pinMap[key].push({part: p});
             });
 
             if (p.type !== 'Jump' && p.type !== 'Pad') {
                 const cos = Math.cos(p.rot * Math.PI/2), sin = Math.sin(p.rot * Math.PI/2);
                 const corners = [ {x: p.bbox.x, y: p.bbox.y}, {x: p.bbox.x + p.bbox.w, y: p.bbox.y}, {x: p.bbox.x, y: p.bbox.y + p.bbox.h}, {x: p.bbox.x + p.bbox.w, y: p.bbox.y + p.bbox.h} ];
                 let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                corners.forEach(c => {
-                    let wx = p.x + c.x * cos - c.y * sin, wy = p.y + c.x * sin + c.y * cos;
-                    if(wx < minX) minX = wx; if(wx > maxX) maxX = wx; if(wy < minY) minY = wy; if(wy > maxY) maxY = wy;
-                });
+                corners.forEach(c => { let wx = p.x + c.x * cos - c.y * sin, wy = p.y + c.x * sin + c.y * cos; if(wx < minX) minX = wx; if(wx > maxX) maxX = wx; if(wy < minY) minY = wy; if(wy > maxY) maxY = wy; });
                 aabbs.push({part: p, minX: minX+0.1, maxX: maxX-0.1, minY: minY+0.1, maxY: maxY-0.1});
             }
         });
 
-        for(let key in pinMap) {
-            if(pinMap[key].length > 1) {
-                let parts = pinMap[key].map(obj => obj.part);
-                let [x, y] = key.split(',').map(Number);
-                state.errors.push({ type: 'duplicate', msg: `同座標ピンの重複衝突`, parts: parts, x: x, y: y });
-            }
-        }
-
+        for(let key in pinMap) { if(pinMap[key].length > 1) { let parts = pinMap[key].map(obj => obj.part); let [x, y] = key.split(',').map(Number); state.errors.push({ type: 'duplicate', msg: `同座標ピンの重複衝突`, parts: parts, x: x, y: y }); } }
         for (let i = 0; i < aabbs.length; i++) {
             for (let j = i + 1; j < aabbs.length; j++) {
                 let a = aabbs[i], b = aabbs[j];
-                if (a.minX < b.maxX && a.maxX > b.minX && a.minY < b.maxY && a.maxY > b.minY) {
-                    state.errors.push({ type: 'overlap', msg: `${a.part.type} と ${b.part.type} の本体干渉`, parts: [a.part, b.part], x: (a.minX+a.maxX)/2, y: (a.minY+a.maxY)/2 });
-                }
+                if (a.minX < b.maxX && a.maxX > b.minX && a.minY < b.maxY && a.maxY > b.minY) state.errors.push({ type: 'overlap', msg: `${a.part.type} と ${b.part.type} の本体干渉`, parts: [a.part, b.part], x: (a.minX+a.maxX)/2, y: (a.minY+a.maxY)/2 });
             }
         }
-
-        if(state.errors.length > 0) {
-            if (state.currentErrorIndex < 0 || state.currentErrorIndex >= state.errors.length) state.currentErrorIndex = 0;
-        } else {
-            state.currentErrorIndex = -1;
-        }
-        updateCheckUI();
+        if(state.errors.length > 0) { if (state.currentErrorIndex < 0 || state.currentErrorIndex >= state.errors.length) state.currentErrorIndex = 0; } else { state.currentErrorIndex = -1; } updateCheckUI();
     };
 
     window.updateCheckUI = () => {
-        let resDiv = document.getElementById('check-results');
-        if(!resDiv) return;
-        
-        if(state.errors.length === 0) {
-            resDiv.innerHTML = '<div style="color:#059669; font-weight:600; text-align:center; padding-top:10px;">エラーなし (正常)</div>';
-            return;
-        }
-        
-        let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <button onclick="prevError()" class="btn-default" style="padding:4px 8px; font-size:11px;">◀ 前</button>
-            <span style="color:#dc2626; font-weight:600; font-size:13px;">Error ${state.currentErrorIndex + 1} / ${state.errors.length}</span>
-            <button onclick="nextError()" class="btn-default" style="padding:4px 8px; font-size:11px;">次 ▶</button>
-        </div>`;
-        
-        let err = state.errors[state.currentErrorIndex];
-        html += `<div style="color:#fff; background:#dc2626; padding:8px; border-radius:4px; text-align:center; font-size:12px; font-weight:600;">${err.msg}</div>`;
-        resDiv.innerHTML = html;
+        let resDiv = document.getElementById('check-results'); if(!resDiv) return;
+        if(state.errors.length === 0) { resDiv.innerHTML = '<div style="color:#059669; font-weight:600; text-align:center; padding-top:10px;">エラーなし (正常)</div>'; return; }
+        let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><button onclick="prevError()" class="btn-default" style="padding:4px 8px; font-size:11px;">◀ 前</button><span style="color:#dc2626; font-weight:600; font-size:13px;">Error ${state.currentErrorIndex + 1} / ${state.errors.length}</span><button onclick="nextError()" class="btn-default" style="padding:4px 8px; font-size:11px;">次 ▶</button></div>`;
+        let err = state.errors[state.currentErrorIndex]; html += `<div style="color:#fff; background:#dc2626; padding:8px; border-radius:4px; text-align:center; font-size:12px; font-weight:600;">${err.msg}</div>`; resDiv.innerHTML = html;
     };
 
     window.focusError = () => {
-        if(state.errors.length === 0 || state.currentErrorIndex < 0) return;
-        let err = state.errors[state.currentErrorIndex];
-        let targetX = err.x;
+        if(state.errors.length === 0 || state.currentErrorIndex < 0) return; let err = state.errors[state.currentErrorIndex]; let targetX = err.x;
         if (state.flipBoard) targetX = -(err.x - (state.boardPos.x * 2 + state.boardX * GRID));
-        
-        state.offsetX = (canvas.width / 2) - targetX * state.zoom;
-        state.offsetY = (canvas.height / 2) - err.y * state.zoom;
-        requestRender();
-        updateCheckUI();
+        state.offsetX = (canvas.width / 2) - targetX * (state.zoom * state.baseScale); state.offsetY = (canvas.height / 2) - err.y * (state.zoom * state.baseScale); requestRender(); updateCheckUI();
     };
 
     window.nextError = () => { if(state.errors.length === 0) return; state.currentErrorIndex = (state.currentErrorIndex + 1) % state.errors.length; focusError(); };
@@ -1141,32 +1035,21 @@
             if (opt.showUI && (l === state.selectedWire || state.multiSelectedLines.includes(l))) { ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=3; ctx.stroke(); }
         });
 
-        if (opt.flipBoard && opt.xray) {
-            ctx.globalAlpha = 0.35;
-        } else if (opt.flipBoard && !opt.xray) {
-            ctx.globalAlpha = 0.0;
-        } else if (!opt.flipBoard && opt.xray) {
-            ctx.globalAlpha = 0.4;
-        } else {
-            ctx.globalAlpha = 1.0;
-        }
+        if (opt.flipBoard && opt.xray) ctx.globalAlpha = 0.35;
+        else if (opt.flipBoard && !opt.xray) ctx.globalAlpha = 0.0;
+        else if (!opt.flipBoard && opt.xray) ctx.globalAlpha = 0.4;
+        else ctx.globalAlpha = 1.0;
         
         let currentErrorParts = [];
-        if (state.mode === 'check' && state.currentErrorIndex >= 0 && state.errors.length > 0 && opt.showUI) {
-            currentErrorParts = state.errors[state.currentErrorIndex].parts;
-        }
+        if (state.mode === 'check' && state.currentErrorIndex >= 0 && state.errors.length > 0 && opt.showUI) { currentErrorParts = state.errors[state.currentErrorIndex].parts; }
 
         if (ctx.globalAlpha > 0) {
             state.parts.forEach((p, idx) => {
                 ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI/2);
                 
                 if (currentErrorParts.includes(p)) {
-                    ctx.save();
-                    ctx.strokeStyle = 'rgba(220, 38, 38, 0.4)'; ctx.lineWidth = 6; ctx.lineJoin = 'round';
-                    ctx.strokeRect(p.bbox.x - 3, p.bbox.y - 3, p.bbox.w + 6, p.bbox.h + 6);
-                    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
-                    ctx.strokeRect(p.bbox.x - 3, p.bbox.y - 3, p.bbox.w + 6, p.bbox.h + 6);
-                    ctx.restore();
+                    ctx.save(); ctx.strokeStyle = 'rgba(220, 38, 38, 0.4)'; ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.strokeRect(p.bbox.x - 3, p.bbox.y - 3, p.bbox.w + 6, p.bbox.h + 6);
+                    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.strokeRect(p.bbox.x - 3, p.bbox.y - 3, p.bbox.w + 6, p.bbox.h + 6); ctx.restore();
                 }
 
                 if(opt.showUI) {
@@ -1177,60 +1060,73 @@
                 ctx.fillStyle = !state.isDarkMode ? '#f8fafc' : '#334155'; ctx.lineWidth = 1; ctx.strokeStyle = !state.isDarkMode ? '#0f172a' : '#0f172a';
 
                 if(p.type === 'R') {
-                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(30,0); ctx.stroke();
-                    ctx.fillStyle = '#fef08a'; ctx.fillRect(3, -3, 24, 6); ctx.strokeRect(3, -3, 24, 6);
-                    const bands = getResistorColors(p.label); bands.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(7 + i*4, -3, 2, 6); });
+                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.span*10,0); ctx.stroke();
+                    let startX = (p.span*10 - 24)/2;
+                    ctx.fillStyle = '#fef08a'; ctx.fillRect(startX, -3, 24, 6); ctx.strokeRect(startX, -3, 24, 6);
+                    const bands = getResistorColors(p.label); bands.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(startX + 4 + i*4, -3, 2, 6); });
                 } else if(p.type === 'R_Stand') {
-                    ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(10,0); ctx.stroke();
+                    ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.span*10,0); ctx.stroke();
                 } else if(p.type === 'C_Box') {
-                    ctx.fillStyle = '#eab308'; ctx.fillRect(2, -4, 26, 8); ctx.strokeRect(2, -4, 26, 8);
+                    ctx.fillStyle = '#eab308'; ctx.fillRect(1, -4, p.span*10 - 2, 8); ctx.strokeRect(1, -4, p.span*10 - 2, 8);
                 } else if(p.type === 'C_Elect') {
                     let val = parseFloat(p.label) || 10; let r = val >= 1000 ? 9 : (val >= 220 ? 7 : (val >= 47 ? 5.5 : 4.5));
-                    ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(5, 0, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(5, 0, r, -Math.PI/2, Math.PI/2); ctx.fill();
+                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.span*10,0); ctx.stroke();
+                    let cx = (p.span*10)/2;
+                    ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(cx, 0, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(cx, 0, r, -Math.PI/2, Math.PI/2); ctx.fill();
                 } else if(p.type === 'C_Ceramic') {
-                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(10,0); ctx.stroke();
-                    ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.ellipse(5, 0, 7, 4, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.span*10,0); ctx.stroke();
+                    let cx = (p.span*10)/2;
+                    ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.ellipse(cx, 0, 7, 4, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
                 } else if(p.type === 'C_Tantalum') {
-                    ctx.fillStyle='#0284c7'; ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(5,-8,10,0); ctx.quadraticCurveTo(5,3,0,0); ctx.fill(); ctx.stroke();
-                } else if(p.type === 'D') {
-                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(20,0); ctx.stroke();
-                    ctx.fillStyle = '#dc2626'; ctx.fillRect(5, -2, 10, 4); ctx.fillStyle = '#020617'; ctx.fillRect(12, -2, 3, 4); 
-                } else if(p.type === 'D_Stand') {
-                    ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, 7); ctx.fill(); ctx.stroke(); 
-                    ctx.fillStyle = '#020617'; ctx.beginPath(); ctx.arc(0, 0, 3.5, -Math.PI/2, Math.PI/2); ctx.fill();
-                    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(10,0); ctx.stroke();
-                } else if(p.type === 'D_Si') {
-                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(30,0); ctx.stroke();
-                    ctx.fillStyle = '#020617'; ctx.fillRect(6, -3, 18, 6); ctx.fillStyle = '#cbd5e1'; ctx.fillRect(20, -3, 4, 6); 
-                } else if(p.type === 'D_Si_Stand') {
-                    ctx.fillStyle = '#020617'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(0, 0, 4, -Math.PI/2, Math.PI/2); ctx.fill();
-                    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(10,0); ctx.stroke();
-                } else if(p.type === 'IC8') {
-                    let h = (p.pins.length/2 - 1) * 10 + 6; ctx.fillStyle = '#020617'; ctx.fillRect(-3, -3, 36, h);
+                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.span*10,0); ctx.stroke();
+                    let cx = (p.span*10)/2;
+                    ctx.fillStyle='#0284c7'; ctx.beginPath(); ctx.moveTo(cx-5,0); ctx.quadraticCurveTo(cx,-8,cx+5,0); ctx.quadraticCurveTo(cx,3,cx-5,0); ctx.fill(); ctx.stroke();
+                } else if(p.type === 'D' || p.type === 'D_Si') {
+                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.span*10,0); ctx.stroke();
+                    let bodyW = p.type === 'D' ? 10 : 16; let startX = (p.span*10 - bodyW)/2;
+                    ctx.fillStyle = p.type === 'D' ? '#dc2626' : '#020617'; ctx.fillRect(startX, -3, bodyW, 6); 
+                    ctx.fillStyle = p.type === 'D' ? '#020617' : '#cbd5e1'; ctx.fillRect(startX + bodyW - 4, -3, 4, 6); 
+                } else if(p.type === 'D_Stand' || p.type === 'D_Si_Stand') {
+                    let colorMain = p.type === 'D_Stand' ? '#dc2626' : '#020617'; let colorBand = p.type === 'D_Stand' ? '#020617' : '#cbd5e1';
+                    ctx.fillStyle = colorMain; ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, 7); ctx.fill(); ctx.stroke(); 
+                    ctx.fillStyle = colorBand; ctx.beginPath(); ctx.arc(0, 0, 3.5, -Math.PI/2, Math.PI/2); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.span*10,0); ctx.stroke();
+                } else if(p.type === 'IC') {
+                    let h = (p.span - 1) * 10 + 6; ctx.fillStyle = '#020617'; ctx.fillRect(-3, -3, 36, h);
                     ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.arc(15, -3, 4, 0, Math.PI); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(2, 2, 1, 0, 7); ctx.fill();
-                } else if(p.type === 'IC_SIP8') {
-                    let h = (p.pins.length - 1) * 10 + 6; ctx.fillStyle = '#020617'; ctx.fillRect(-3, -3, 16, h);
+                } else if(p.type === 'IC_SIP') {
+                    let h = (p.span - 1) * 10 + 6; ctx.fillStyle = '#020617'; ctx.fillRect(-3, -3, 16, h);
                     ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(5, 2, 1.5, 0, 7); ctx.fill();
+                } else if(p.type === 'DIP_SW') {
+                    let h = (p.span - 1) * 10 + 10;
+                    ctx.fillStyle = '#b91c1c'; ctx.fillRect(-2, -5, 34, h); 
+                    for(let i=0; i<p.span; i++) {
+                        ctx.fillStyle = '#f8fafc'; ctx.fillRect(4, i*10 - 2, 22, 6); 
+                        ctx.fillStyle = '#94a3b8'; ctx.fillRect(16, i*10 - 2, 10, 6); 
+                    }
                 } else if(p.type === 'TR') {
-                    ctx.fillStyle = '#020617'; ctx.beginPath(); ctx.arc(10, -1, 6, Math.PI, 0); ctx.fill(); 
+                    ctx.fillStyle = '#020617'; ctx.beginPath(); ctx.arc((p.span*10)/2, -1, 6, Math.PI, 0); ctx.fill(); 
                 } else if(p.type === 'TR_MOSFET') {
-                    ctx.fillStyle = '#94a3b8'; ctx.fillRect(-2, -6, 24, 6);
-                    ctx.fillStyle = '#020617'; ctx.fillRect(0, -2, 20, 8);
-                    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(10, -3, 1.5, 0, 7); ctx.fill();
+                    ctx.fillStyle = '#94a3b8'; ctx.fillRect(-2, -6, p.span*10 + 4, 6);
+                    ctx.fillStyle = '#020617'; ctx.fillRect(0, -2, p.span*10, 8);
+                    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc((p.span*10)/2, -3, 1.5, 0, 7); ctx.fill();
                 } else if(p.type === 'Pot') {
-                    ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(10, -5, 8, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#020617'; ctx.fillRect(8, -5, 4, 10);
+                    ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc((p.span*10)/2, -5, 8, 0, 7); ctx.fill(); ctx.stroke(); 
+                    ctx.fillStyle = '#020617'; ctx.fillRect((p.span*10)/2 - 2, -5, 4, 10);
                 } else if(p.type === 'Trim') {
-                    ctx.fillStyle = '#0284c7'; ctx.fillRect(0, -6, 20, 12); ctx.strokeRect(0, -6, 20, 12);
-                    ctx.fillStyle = '#f1f5f9'; ctx.beginPath(); ctx.arc(10, 0, 4, 0, 7); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = '#020617'; ctx.fillRect(8, -1, 4, 2); ctx.fillRect(9, -2, 2, 4);
+                    ctx.fillStyle = '#0284c7'; ctx.fillRect(-2, -4, p.span*10 + 4, 18); ctx.strokeRect(-2, -4, p.span*10 + 4, 18);
+                    ctx.fillStyle = '#f1f5f9'; ctx.beginPath(); ctx.arc(p.span*5, 5, 5, 0, 7); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#020617'; ctx.fillRect(p.span*5 - 1, 3, 2, 4);
                 } else if(p.type === 'SW') {
                     ctx.fillStyle = '#b91c1c'; ctx.fillRect(-2, -2, 14, 24); ctx.strokeRect(-2, -2, 14, 24);
                 } else if(p.type === 'Jump') {
-                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.pins[1].x,0); ctx.stroke();
+                    ctx.strokeStyle = !state.isDarkMode ? '#94a3b8' : '#cbd5e1'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.span*10,0); ctx.stroke();
                 } else if(p.type === 'Pad') {
                     ctx.fillStyle = p.color; ctx.fillRect(-4, -4, 8, 8);
+                } else if(p.type === 'Custom') {
+                    ctx.fillStyle = p.color; ctx.fillRect(-2, -2, p.span*10 + 4, p.spanY*10 + 4);
+                    ctx.strokeStyle = !state.isDarkMode ? '#0f172a' : '#f8fafc'; ctx.strokeRect(-2, -2, p.span*10 + 4, p.spanY*10 + 4);
                 }
 
                 ctx.globalAlpha = opt.xray ? 0.4 : 1.0;
@@ -1238,13 +1134,11 @@
 
                 if(p.type !== 'Jump') {
                     let tColor = '#000';
-                    if (['C_Elect', 'C_Tantalum', 'D', 'D_Stand', 'D_Si', 'D_Si_Stand', 'IC8', 'IC14', 'IC_SIP8', 'TR', 'TR_MOSFET', 'Pot', 'Trim', 'SW'].includes(p.type)) { tColor = '#fff'; } 
-                    else if (p.type === 'Pad') { 
-                        let hex = p.color.replace('#', '');
-                        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+                    if (['C_Elect', 'C_Tantalum', 'D', 'D_Stand', 'D_Si', 'D_Si_Stand', 'IC', 'IC_SIP', 'DIP_SW', 'TR', 'TR_MOSFET', 'Pot', 'Trim', 'SW'].includes(p.type)) { tColor = '#fff'; } 
+                    else if (p.type === 'Pad' || p.type === 'Custom') { 
+                        let hex = p.color.replace('#', ''); if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
                         let r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16);
-                        let yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-                        tColor = (yiq >= 128) ? '#000' : '#fff';
+                        tColor = (((r * 299) + (g * 587) + (b * 114)) / 1000 >= 128) ? '#000' : '#fff';
                     }
                     
                     ctx.fillStyle = tColor; ctx.font = 'bold 4px sans-serif'; ctx.textAlign='center'; 
@@ -1253,14 +1147,11 @@
                     let cx = p.bbox.x + p.bbox.w / 2;
                     let cy = p.bbox.y + p.bbox.h / 2;
                     if(p.type === 'Pot') { cy = -15; }
-                    if(p.type === 'Trim') { cy = -8; }
+                    if(p.type === 'Trim') { cy = 5; cx = p.span*5; }
                     if(p.type === 'SW') { cy = -5; }
                     if(p.type === 'TR' || p.type === 'TR_MOSFET') { cy = 4; }
                     
-                    ctx.translate(cx, cy);
-                    ctx.rotate(-p.rot * Math.PI/2);
-                    ctx.fillText(p.label, 0, 1.5); 
-                    ctx.restore();
+                    ctx.translate(cx, cy); ctx.rotate(-p.rot * Math.PI/2); ctx.fillText(p.label, 0, 1.5); ctx.restore();
                 }
                 ctx.restore();
             });
@@ -1287,16 +1178,14 @@
 
     function render() {
         if (lastSelectedPart !== state.selectedPart) { updateInputUI(); lastSelectedPart = state.selectedPart; }
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = state.isDarkMode ? 'var(--bg)' : 'var(--bg)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = state.isDarkMode ? 'var(--bg)' : 'var(--bg)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         if (state.viewMode === 'image' && state.bgImage) {
             ctx.save(); ctx.translate(canvas.width/2 + state.imgPos.x, canvas.height/2 + state.imgPos.y); ctx.scale(state.imgZoom, state.imgZoom);
             ctx.drawImage(state.bgImage, -state.bgImage.width/2, -state.bgImage.height/2); ctx.restore(); drawHUD(); return;
         }
-        ctx.save(); ctx.translate(state.offsetX, state.offsetY); ctx.scale(state.zoom, state.zoom);
-        drawCircuit(ctx, { xray: state.xray, flipBoard: state.flipBoard, showUI: true, currentWire: state.currentWire });
-        ctx.restore(); drawHUD();
+        ctx.save(); ctx.translate(state.offsetX, state.offsetY); ctx.scale(state.zoom * state.baseScale, state.zoom * state.baseScale);
+        drawCircuit(ctx, { xray: state.xray, flipBoard: state.flipBoard, showUI: true, currentWire: state.currentWire }); ctx.restore(); drawHUD();
     }
 
     function drawHUD() {
@@ -1310,222 +1199,113 @@
     window.changeBoardSize = () => {
         const val = document.getElementById('boardSizeSelect').value; const customDiv = document.getElementById('customSizeDiv');
         if (val === 'custom') { customDiv.style.display = 'flex'; state.boardX = parseInt(document.getElementById('customX').value) || 15; state.boardY = parseInt(document.getElementById('customY').value) || 10; } 
-        else { customDiv.style.display = 'none'; const s = val.split(','); state.boardX = parseInt(s[0]); state.boardY = parseInt(s[1]); }
-        commitState(); requestRender();
+        else { customDiv.style.display = 'none'; const s = val.split(','); state.boardX = parseInt(s[0]); state.boardY = parseInt(s[1]); } commitState(); requestRender();
     };
     
     window.importImage = () => {
-        document.getElementById('dataMenuModal').style.display='none'; 
-        const input = document.createElement('input'); 
-        input.type='file'; 
-        input.accept='image/*';
+        document.getElementById('dataMenuModal').style.display='none'; const input = document.createElement('input'); input.type='file'; input.accept='image/*';
         input.onchange = e => { 
-            window.scrollTo(0, 0); 
-            const reader = new FileReader(); 
+            window.scrollTo(0, 0); const reader = new FileReader(); 
             reader.onload = f => { 
                 const img = new Image(); 
                 img.onload = () => { 
                     state.bgImage = img; state.viewMode = 'image'; 
                     const scale = Math.min((canvas.width * 0.8) / img.width, (canvas.height * 0.8) / img.height, 1.0);
-                    state.imgZoom = scale; 
-                    state.imgPos = {x:0, y:0}; 
-                    updateTopButtons(); 
-                    resize(); 
-                    requestRender(); 
+                    state.imgZoom = scale; state.imgPos = {x:0, y:0}; updateTopButtons(); resize(); requestRender(); 
                     setTimeout(() => alert("参照画像を読み込みました。"), 50); 
-                }; 
-                img.src = f.target.result; 
-            }; 
-            reader.readAsDataURL(e.target.files[0]); 
-        }; 
-        input.click();
+                }; img.src = f.target.result; 
+            }; reader.readAsDataURL(e.target.files[0]); 
+        }; input.click();
     };
 
     window.saveImage3View = async () => {
-        document.getElementById('dataMenuModal').style.display='none';
-        const title = document.getElementById('projectNameInput').value || 'effector_layout';
+        document.getElementById('dataMenuModal').style.display='none'; const title = document.getElementById('projectNameInput').value || 'effector_layout';
+        const exportCanvas = document.createElement('canvas'); const eCtx = exportCanvas.getContext('2d');
+        const scale = 2, margin = 40, boardW = state.boardX * GRID, boardH = state.boardY * GRID;
+        const singleW = boardW + margin * 2, singleH = boardH + margin * 2 + 50; 
         
-        const exportCanvas = document.createElement('canvas');
-        const eCtx = exportCanvas.getContext('2d');
+        exportCanvas.width = singleW * 3 * scale * state.baseScale; exportCanvas.height = singleH * scale * state.baseScale;
+        eCtx.scale(scale * state.baseScale, scale * state.baseScale); eCtx.fillStyle = state.isDarkMode ? '#0f172a' : '#f0f2f5'; eCtx.fillRect(0, 0, singleW * 3, singleH);
         
-        const scale = 2;
-        const margin = 40;
-        const boardW = state.boardX * GRID;
-        const boardH = state.boardY * GRID;
-        const singleW = boardW + margin * 2;
-        const singleH = boardH + margin * 2 + 50; 
-        
-        exportCanvas.width = singleW * 3 * scale;
-        exportCanvas.height = singleH * scale;
-        
-        eCtx.scale(scale, scale);
-        eCtx.fillStyle = state.isDarkMode ? '#0f172a' : '#f0f2f5';
-        eCtx.fillRect(0, 0, singleW * 3, singleH);
-        
-        const views = [
-            { name: 'Component Side (表面)', xray: false, flipBoard: false, dx: 0 },
-            { name: 'X-Ray View (透視)', xray: true, flipBoard: false, dx: singleW },
-            { name: 'Solder Side (裏面)', xray: true, flipBoard: true, dx: singleW * 2 }
-        ];
-        
-        const tempBoardPos = { ...state.boardPos };
-        state.boardPos = {x: 0, y: 0};
-        state.parts.forEach(p => { p.x -= tempBoardPos.x; p.y -= tempBoardPos.y; });
-        state.lines.forEach(l => l.points.forEach(pt => { pt.x -= tempBoardPos.x; pt.y -= tempBoardPos.y; }));
+        const views = [ { name: 'Component Side (表面)', xray: false, flipBoard: false, dx: 0 }, { name: 'X-Ray View (透視)', xray: true, flipBoard: false, dx: singleW }, { name: 'Solder Side (裏面)', xray: true, flipBoard: true, dx: singleW * 2 } ];
+        const tempBoardPos = { ...state.boardPos }; state.boardPos = {x: 0, y: 0};
+        state.parts.forEach(p => { p.x -= tempBoardPos.x; p.y -= tempBoardPos.y; }); state.lines.forEach(l => l.points.forEach(pt => { pt.x -= tempBoardPos.x; pt.y -= tempBoardPos.y; }));
 
         views.forEach(v => {
-            eCtx.save();
-            eCtx.translate(v.dx, 0);
-            
-            eCtx.fillStyle = state.isDarkMode ? '#f8fafc' : '#1e293b';
-            eCtx.font = 'bold 16px sans-serif';
-            eCtx.textAlign = 'center';
-            eCtx.fillText(v.name, singleW / 2, 30);
-            
-            eCtx.translate(margin, margin + 40);
-            drawCircuit(eCtx, { xray: v.xray, flipBoard: v.flipBoard, showUI: false }); 
-            eCtx.restore();
+            eCtx.save(); eCtx.translate(v.dx, 0); eCtx.fillStyle = state.isDarkMode ? '#f8fafc' : '#1e293b'; eCtx.font = 'bold 16px sans-serif'; eCtx.textAlign = 'center'; eCtx.fillText(v.name, singleW / 2, 30);
+            eCtx.translate(margin, margin + 40); drawCircuit(eCtx, { xray: v.xray, flipBoard: v.flipBoard, showUI: false }); eCtx.restore();
         });
 
-        state.parts.forEach(p => { p.x += tempBoardPos.x; p.y += tempBoardPos.y; });
-        state.lines.forEach(l => l.points.forEach(pt => { pt.x += tempBoardPos.x; pt.y += tempBoardPos.y; }));
-        state.boardPos = tempBoardPos;
-        
-        exportCanvas.toBlob(async (b) => { 
-            await triggerDownload(b, title + '_3view.png'); 
-        });
+        state.parts.forEach(p => { p.x += tempBoardPos.x; p.y += tempBoardPos.y; }); state.lines.forEach(l => l.points.forEach(pt => { pt.x += tempBoardPos.x; pt.y += tempBoardPos.y; })); state.boardPos = tempBoardPos;
+        exportCanvas.toBlob(async (b) => { await triggerDownload(b, title + '_3view.png'); });
     };
     
     async function saveFile(type) {
         document.getElementById('dataMenuModal').style.display='none'; 
-        let blob, filename; 
         const title = document.getElementById('projectNameInput').value || 'effector_layout';
-        const dataStr = JSON.stringify({ projectName: title, parts: state.parts, lines: state.lines, boardX: state.boardX, boardY: state.boardY, boardPos: state.boardPos }); 
-        blob = new Blob([dataStr], { type: 'application/json' }); 
-        filename = title + '.json'; 
-        await triggerDownload(blob, filename); 
+        const dataStr = JSON.stringify({ projectName: title, parts: state.parts, lines: state.lines, boardX: state.boardX, boardY: state.boardY, boardPos: state.boardPos, baseScale: state.baseScale }); 
+        const blob = new Blob([dataStr], { type: 'application/json' }); 
+        await triggerDownload(blob, title + '.json'); 
     }
     
     async function triggerDownload(blob, defaultName) {
-        if (window.showSaveFilePicker) { 
-            try { 
-                const handle = await window.showSaveFilePicker({ suggestedName: defaultName }); 
-                const writable = await handle.createWritable(); 
-                await writable.write(blob); 
-                await writable.close(); 
-                alert('保存しました。'); 
-                return; 
-            } catch(e) { 
-                if(e.name !== 'AbortError') console.error(e); 
-                return; 
-            } 
-        }
-
+        if (window.showSaveFilePicker) { try { const handle = await window.showSaveFilePicker({ suggestedName: defaultName }); const writable = await handle.createWritable(); await writable.write(blob); await writable.close(); alert('保存しました。'); return; } catch(e) { if(e.name !== 'AbortError') console.error(e); return; } }
         const file = new File([blob], defaultName, { type: blob.type });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Effector Layout Data'
-                });
-                return; 
-            } catch (err) {
-                if (err.name !== 'AbortError') console.error('Share failed:', err);
-            }
-        }
-
-        const a = document.createElement('a'); 
-        a.href = URL.createObjectURL(blob); 
-        a.download = defaultName; 
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 100);
+        if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Effector Layout Data' }); return; } catch (err) { if (err.name !== 'AbortError') console.error('Share failed:', err); } }
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = defaultName; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 100);
     }
     
     window.importData = () => {
-        document.getElementById('dataMenuModal').style.display='none'; 
-        const input = document.createElement('input'); 
-        input.type = 'file'; 
-        input.accept = '.json';
+        document.getElementById('dataMenuModal').style.display='none'; const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
         input.onchange = e => { 
-            window.scrollTo(0, 0); 
-            const reader = new FileReader(); 
+            window.scrollTo(0, 0); const reader = new FileReader(); 
             reader.onload = f => { 
                 try { 
                     const data = JSON.parse(f.target.result); 
                     if(data.projectName) document.getElementById('projectNameInput').value = data.projectName; 
-                    state.parts = data.parts || []; 
-                    state.lines = data.lines || []; 
-                    state.boardX = data.boardX || 15; 
-                    state.boardY = data.boardY || 10; 
-                    state.boardPos = data.boardPos || {x:0, y:0}; 
-                    state.selectedPart = null; 
-                    state.currentWire = null; 
-                    state.selectedWire = null; 
-                    state.multiSelection = []; 
-                    state.multiSelectedLines = []; 
-                    state.selectStart = null; 
-                    document.getElementById('boardSizeSelect').value = 'custom'; 
-                    document.getElementById('customSizeDiv').style.display = 'flex'; 
-                    document.getElementById('customX').value = state.boardX; 
-                    document.getElementById('customY').value = state.boardY; 
-                    commitState(); 
-                    updateActionUI(); 
-                    requestRender(); 
-                    setTimeout(() => alert("データを読み込みました"), 50); 
-                } catch(err) { 
-                    setTimeout(() => alert("読込失敗"), 50); 
-                } 
-            }; 
-            reader.readAsText(e.target.files[0]); 
-        }; 
-        input.click();
+                    state.parts = data.parts || []; state.lines = data.lines || []; state.boardX = data.boardX || 15; state.boardY = data.boardY || 10; state.boardPos = data.boardPos || {x:0, y:0}; 
+                    state.baseScale = data.baseScale || 1.0;
+                    state.selectedPart = null; state.currentWire = null; state.selectedWire = null; state.multiSelection = []; state.multiSelectedLines = []; state.selectStart = null; 
+                    
+                    const pitchSelect = document.getElementById('gridPitchSelect'); if(pitchSelect) pitchSelect.value = state.baseScale.toString();
+
+                    state.parts.forEach(p => {
+                        if (p.type === 'IC8') { p.type = 'IC'; p.span = 4; }
+                        if (p.type === 'IC14') { p.type = 'IC'; p.span = 7; }
+                        if (p.span === undefined) {
+                            if (p.type === 'R' || p.type === 'C_Box') p.span = 3; 
+                            else if (p.type === 'Jump') p.span = parseInt(p.label) || 2;
+                            else if (p.type === 'DIP_SW') p.span = 4;
+                            else p.span = 2;
+                            if (['R','C_Box','D','D_Si','Jump'].includes(p.type) && p.pins && p.pins.length >= 2) p.span = Math.round((p.pins[1].x - p.pins[0].x) / 10);
+                        }
+                        recalcPartGeometry(p);
+                    });
+
+                    document.getElementById('boardSizeSelect').value = 'custom'; document.getElementById('customSizeDiv').style.display = 'flex'; document.getElementById('customX').value = state.boardX; document.getElementById('customY').value = state.boardY; 
+                    commitState(); updateActionUI(); requestRender(); setTimeout(() => alert("データを読み込みました"), 50); 
+                } catch(err) { setTimeout(() => alert("読込失敗"), 50); } 
+            }; reader.readAsText(e.target.files[0]); 
+        }; input.click();
     };
     
     window.openBomModal = () => {
         document.getElementById('dataMenuModal').style.display = 'none'; 
-        
         let groups = {}; 
         state.parts.forEach(p => { 
             if(p.type !== 'Pad' && p.type !== 'Jump') { 
                 let category = 'Other';
-                if(p.type.startsWith('R')) category = 'Resistor (抵抗)';
-                else if(p.type.startsWith('C_')) category = 'Capacitor (コンデンサ)';
-                else if(p.type.startsWith('D')) category = 'Diode (ダイオード)';
-                else if(p.type.startsWith('IC')) category = 'IC (集積回路)';
-                else if(p.type.startsWith('TR')) category = 'Transistor / FET';
-                else if(p.type === 'Pot' || p.type === 'Trim') category = 'Potentiometer (可変抵抗)';
-                else if(p.type === 'SW') category = 'Switch (スイッチ)';
-
-                if(!groups[category]) groups[category] = {};
-                let k = p.label || '無名'; 
-                groups[category][k] = (groups[category][k] || 0) + 1; 
+                if(p.type.startsWith('R')) category = 'Resistor (抵抗)'; else if(p.type.startsWith('C_')) category = 'Capacitor (コンデンサ)'; else if(p.type.startsWith('D')) category = 'Diode (ダイオード)'; else if(p.type.startsWith('IC')) category = 'IC (集積回路)'; else if(p.type.startsWith('TR')) category = 'Transistor / FET'; else if(p.type === 'Pot' || p.type === 'Trim') category = 'Potentiometer (可変抵抗)'; else if(p.type === 'SW' || p.type === 'DIP_SW') category = 'Switch (スイッチ)'; else if(p.type === 'Custom') category = 'Custom (カスタムパーツ)';
+                if(!groups[category]) groups[category] = {}; let k = p.label || '無名'; groups[category][k] = (groups[category][k] || 0) + 1; 
             } 
         });
-
-        let order = ['Resistor (抵抗)', 'Capacitor (コンデンサ)', 'Diode (ダイオード)', 'Transistor / FET', 'IC (集積回路)', 'Potentiometer (可変抵抗)', 'Switch (スイッチ)', 'Other'];
+        let order = ['Resistor (抵抗)', 'Capacitor (コンデンサ)', 'Diode (ダイオード)', 'Transistor / FET', 'IC (集積回路)', 'Potentiometer (可変抵抗)', 'Switch (スイッチ)', 'Custom (カスタムパーツ)', 'Other'];
         let text = "--- BOM (Parts List) ---\n\n"; 
-        
-        order.forEach(cat => {
-            if(groups[cat]) {
-                let total = 0;
-                let itemsText = "";
-                for(let k in groups[cat]) {
-                    itemsText += `  ${k} : ${groups[cat][k]} 個\n`;
-                    total += groups[cat][k];
-                }
-                text += `【${cat}】 計 ${total} 個\n${itemsText}\n`;
-            }
-        });
-        
-        document.getElementById('partListText').value = text; 
-        document.getElementById('bomModal').style.display='flex';
+        order.forEach(cat => { if(groups[cat]) { let total = 0, itemsText = ""; for(let k in groups[cat]) { itemsText += `  ${k} : ${groups[cat][k]} 個\n`; total += groups[cat][k]; } text += `【${cat}】 計 ${total} 個\n${itemsText}\n`; } });
+        document.getElementById('partListText').value = text; document.getElementById('bomModal').style.display='flex';
     };
 
-    window.closeBomModal = () => {
-        document.getElementById('bomModal').style.display = 'none';
-        document.getElementById('dataMenuModal').style.display = 'flex';
-    };
-
+    window.closeBomModal = () => { document.getElementById('bomModal').style.display = 'none'; document.getElementById('dataMenuModal').style.display = 'flex'; };
     document.getElementById('bomModal').addEventListener('click', function(e) { if(e.target === this) closeBomModal(); });
     document.getElementById('dataMenuModal').addEventListener('click', function(e) { if(e.target === this) this.style.display = 'none'; });
     document.getElementById('keyConfigModal').addEventListener('click', function(e) { if(e.target === this) closeKeyConfigModal(); });
@@ -1536,11 +1316,7 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then(reg => {
-        console.log('ServiceWorker registered:', reg.scope);
-      }).catch(err => {
-        console.log('ServiceWorker registration failed:', err);
-      });
+      navigator.serviceWorker.register('./sw.js').then(reg => { console.log('ServiceWorker registered:', reg.scope); }).catch(err => { console.log('ServiceWorker registration failed:', err); });
     });
   }
 </script>
